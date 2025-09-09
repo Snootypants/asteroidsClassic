@@ -150,9 +150,21 @@ function App() {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    shipRef.current.draw(ctx);
-    asteroidsRef.current.forEach((asteroid) => asteroid.draw(ctx));
-    bulletsRef.current.forEach((bullet) => bullet.draw(ctx));
+    if (shipRef.current) {
+      shipRef.current.draw(ctx);
+    }
+    
+    asteroidsRef.current.forEach((asteroid) => {
+      if (asteroid) {
+        asteroid.draw(ctx);
+      }
+    });
+    
+    bulletsRef.current.forEach((bullet) => {
+      if (bullet) {
+        bullet.draw(ctx);
+      }
+    });
   }, []);
 
   const gameLoop = useCallback(() => {
@@ -167,12 +179,30 @@ function App() {
       keys: { ...keysRef.current }
     }));
     requestRef.current = requestAnimationFrame(gameLoop);
-  }, [update, render]);
+  }, []);
 
   useEffect(() => {
-    requestRef.current = requestAnimationFrame(gameLoop);
-    return () => cancelAnimationFrame(requestRef.current);
-  }, [gameLoop]);
+    const loop = () => {
+      update();
+      render();
+      setUiState((prev) => ({
+        ...prev,
+        score: scoreRef.current,
+        lives: livesRef.current,
+        gameOver: gameOverRef.current,
+        frameCount: prev.frameCount + 1,
+        keys: { ...keysRef.current }
+      }));
+      requestRef.current = requestAnimationFrame(loop);
+    };
+    
+    requestRef.current = requestAnimationFrame(loop);
+    return () => {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="app">
