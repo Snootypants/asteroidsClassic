@@ -76,22 +76,18 @@ function App() {
     ship.y += ship.vy;
     ship.vx *= 0.99;
     ship.vy *= 0.99;
-    shipRef.current = wrapPosition(ship, CANVAS_WIDTH, CANVAS_HEIGHT);
+    wrapPosition(ship, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Update asteroids
     asteroidsRef.current.forEach((asteroid) => {
       asteroid.update();
-      const wrapped = wrapPosition(asteroid, CANVAS_WIDTH, CANVAS_HEIGHT);
-      asteroid.x = wrapped.x;
-      asteroid.y = wrapped.y;
+      wrapPosition(asteroid, CANVAS_WIDTH, CANVAS_HEIGHT);
     });
 
     // Update bullets
     bulletsRef.current.forEach((bullet) => {
       bullet.update();
-      const wrapped = wrapPosition(bullet, CANVAS_WIDTH, CANVAS_HEIGHT);
-      bullet.x = wrapped.x;
-      bullet.y = wrapped.y;
+      wrapPosition(bullet, CANVAS_WIDTH, CANVAS_HEIGHT);
     });
     bulletsRef.current = bulletsRef.current.filter((bullet) => !bullet.isExpired());
 

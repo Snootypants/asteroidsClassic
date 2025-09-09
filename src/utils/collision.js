@@ -7,10 +7,9 @@ export function checkCollision(obj1, obj2) {
 }
 
 export function wrapPosition(obj, canvasWidth, canvasHeight) {
-  const newObj = { ...obj };
-  if (newObj.x < 0) newObj.x = canvasWidth;
-  if (newObj.x > canvasWidth) newObj.x = 0;
-  if (newObj.y < 0) newObj.y = canvasHeight;
-  if (newObj.y > canvasHeight) newObj.y = 0;
-  return newObj;
+  if (obj.x < 0) obj.x = canvasWidth;
+  if (obj.x > canvasWidth) obj.x = 0;
+  if (obj.y < 0) obj.y = canvasHeight;
+  if (obj.y > canvasHeight) obj.y = 0;
+  return obj;
 }
