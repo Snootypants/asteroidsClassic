@@ -181,16 +181,19 @@ function App() {
       ship.vx += Math.cos(ship.angle) * ship.speed;
       ship.vy += Math.sin(ship.angle) * ship.speed;
     }
-    if (keys.KeyS) {
-      ship.vx -= Math.cos(ship.angle) * ship.speed;
-      ship.vy -= Math.sin(ship.angle) * ship.speed;
-    }
     
     // Apply velocity and friction
     ship.x += ship.vx;
     ship.y += ship.vy;
-    ship.vx *= 0.99;
-    ship.vy *= 0.99;
+    
+    // S key brakes (slows down to zero, no reverse)
+    if (keys.KeyS) {
+      ship.vx *= 0.92;
+      ship.vy *= 0.92;
+    } else {
+      ship.vx *= 0.99;
+      ship.vy *= 0.99;
+    }
     wrapPosition(ship, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Update asteroids
