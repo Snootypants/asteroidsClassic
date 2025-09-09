@@ -166,21 +166,24 @@ function App() {
   const update = useCallback(() => {
     if (gameOverRef.current || !gameStartedRef.current || uiState.isPaused) return;
 
-    // Update ship - now follows mouse
+    // Update ship - aims at crosshair, moves with W/S
     const keys = keysRef.current;
     const ship = shipRef.current;
     const mousePos = mousePositionRef.current;
     
-    // Calculate angle to mouse
+    // Calculate angle to mouse crosshair
     const dx = mousePos.x - ship.x;
     const dy = mousePos.y - ship.y;
     ship.angle = Math.atan2(dy, dx);
     
-    // Automatic thrust when mouse is far from ship
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance > 20) { // Only thrust if mouse is far enough
+    // W/S movement controls
+    if (keys.KeyW) {
       ship.vx += Math.cos(ship.angle) * ship.speed;
       ship.vy += Math.sin(ship.angle) * ship.speed;
+    }
+    if (keys.KeyS) {
+      ship.vx -= Math.cos(ship.angle) * ship.speed;
+      ship.vy -= Math.sin(ship.angle) * ship.speed;
     }
     
     // Apply velocity and friction
@@ -286,6 +289,21 @@ function App() {
         bullet.draw(ctx);
       }
     });
+
+    // Draw crosshair at mouse position when pointer is locked
+    if (isPointerLockedRef.current && gameStartedRef.current && !uiState.isPaused) {
+      const mousePos = mousePositionRef.current;
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      // Horizontal line
+      ctx.moveTo(mousePos.x - 10, mousePos.y);
+      ctx.lineTo(mousePos.x + 10, mousePos.y);
+      // Vertical line
+      ctx.moveTo(mousePos.x, mousePos.y - 10);
+      ctx.lineTo(mousePos.x, mousePos.y + 10);
+      ctx.stroke();
+    }
   }, []);
 
   const gameLoop = useCallback(() => {
