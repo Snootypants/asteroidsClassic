@@ -1,6 +1,6 @@
 // Game constants for easy tuning and expansion
-export const CANVAS_WIDTH = 800;
-export const CANVAS_HEIGHT = 600;
+export const CANVAS_WIDTH = 1200;
+export const CANVAS_HEIGHT = 900;
 export const SHIP_SIZE = 10;
 export const SHIP_SPEED = 0.2;
 export const BULLET_FIRE_RATE = 333; // milliseconds between shots (3 shots per second)
@@ -29,8 +29,8 @@ export const STAR_LARGE_THRESHOLD = 0.7;
 export const STAR_MEDIUM_THRESHOLD = 0.4;
 
 // Phase 2: Big Map constants
-export const WORLD_WIDTH = CANVAS_WIDTH * 5; // 4000px
-export const WORLD_HEIGHT = CANVAS_HEIGHT * 5; // 3000px
+export const WORLD_WIDTH = 4000; // Fixed world size - 5x original 800px viewport
+export const WORLD_HEIGHT = 3000; // Fixed world size - 5x original 600px viewport
 export const VIEWPORT_WIDTH = CANVAS_WIDTH;
 export const VIEWPORT_HEIGHT = CANVAS_HEIGHT;
 

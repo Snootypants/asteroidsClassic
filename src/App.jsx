@@ -10,6 +10,7 @@ import './App.css';
 
 function App() {
   const canvasRef = useRef(null);
+  const minimapCanvasRef = useRef(null);
   const shipRef = useRef(new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2));
   const cameraRef = useRef(new Camera());
   const asteroidsRef = useRef([]);
@@ -333,6 +334,13 @@ function App() {
     }
   }, []);
 
+  const renderMinimap = useCallback(() => {
+    const minimapCanvas = minimapCanvasRef.current;
+    if (!minimapCanvas) return;
+    const ctx = minimapCanvas.getContext('2d');
+    Minimap.draw(ctx, shipRef.current, asteroidsRef.current, cameraRef.current);
+  }, []);
+
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -420,9 +428,9 @@ function App() {
       ctx.stroke();
     }
 
-    // Draw minimap
-    Minimap.draw(ctx, shipRef.current, asteroidsRef.current, camera);
-  }, []);
+    // Render minimap separately
+    renderMinimap();
+  }, [renderMinimap]);
 
 
   useEffect(() => {
@@ -469,15 +477,26 @@ function App() {
           </div>
         )}
       </div>
-      <div className="ui">
-        <div>Score: {uiState.score}</div>
-        <div>Lives: {uiState.lives}</div>
-        {uiState.gameOver && <div className="game-over">Game Over</div>}
-      </div>
-      <div className="buttons">
-        {uiState.gameStarted && uiState.gameOver && (
-          <button onClick={startGame} className="game-button">New Game</button>
-        )}
+      <div className="bottom-ui">
+        <div className="ui-left">
+          <div>Score: {uiState.score}</div>
+          <div>Lives: {uiState.lives}</div>
+          {uiState.gameOver && <div className="game-over">Game Over</div>}
+        </div>
+        <div className="ui-center">
+          <div className="minimap-label">minimap</div>
+          <canvas 
+            ref={minimapCanvasRef}
+            width={MINIMAP_WIDTH}
+            height={MINIMAP_HEIGHT}
+            className="minimap-canvas"
+          />
+        </div>
+        <div className="ui-right">
+          {uiState.gameStarted && uiState.gameOver && (
+            <button onClick={startGame} className="game-button">New Game</button>
+          )}
+        </div>
       </div>
     </div>
   );

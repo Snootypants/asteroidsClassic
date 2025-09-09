@@ -1,14 +1,17 @@
-import { WORLD_WIDTH, WORLD_HEIGHT, MINIMAP_WIDTH, MINIMAP_HEIGHT } from '../utils/constants.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, MINIMAP_WIDTH, MINIMAP_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../utils/constants.js';
 
 export class Minimap {
   static draw(ctx, ship, asteroids, camera) {
-    // Minimap position (bottom right corner with margin)
-    const mapX = ctx.canvas.width - MINIMAP_WIDTH - 20;
-    const mapY = ctx.canvas.height - MINIMAP_HEIGHT - 20;
+    // Clear the minimap canvas
+    ctx.clearRect(0, 0, MINIMAP_WIDTH, MINIMAP_HEIGHT);
+    
+    // Full canvas is the minimap
+    const mapX = 0;
+    const mapY = 0;
     
     // Draw minimap background
     ctx.save();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
     ctx.fillRect(mapX, mapY, MINIMAP_WIDTH, MINIMAP_HEIGHT);
@@ -47,8 +50,8 @@ export class Minimap {
     }
     
     // Draw viewport rectangle
-    const effectiveViewportWidth = camera.zoom * ctx.canvas.width;
-    const effectiveViewportHeight = camera.zoom * ctx.canvas.height;
+    const effectiveViewportWidth = camera.zoom * VIEWPORT_WIDTH;
+    const effectiveViewportHeight = camera.zoom * VIEWPORT_HEIGHT;
     
     const viewX = mapX + (camera.x - effectiveViewportWidth / 2) * scaleX;
     const viewY = mapY + (camera.y - effectiveViewportHeight / 2) * scaleY;
