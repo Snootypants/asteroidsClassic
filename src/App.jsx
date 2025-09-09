@@ -19,11 +19,14 @@ function App() {
   const requestRef = useRef();
   const lastShotTimeRef = useRef(0);
   const starsRef = useRef([]);
+  const mousePositionRef = useRef({ x: 0, y: 0 });
+  const isPointerLockedRef = useRef(false);
   const [uiState, setUiState] = useState({
     score: 0,
     lives: 3,
     gameOver: false,
     gameStarted: false,
+    isPaused: false,
     frameCount: 0,
     keys: {}
   });
@@ -52,35 +55,71 @@ function App() {
     starsRef.current = stars;
   }, []);
 
-  // Handle keyboard input
+  // Handle pointer lock and mouse/keyboard input
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (['KeyA', 'KeyD', 'KeyW', 'KeyS', 'Space'].includes(e.code)) {
+      if (['KeyA', 'KeyD', 'KeyW', 'KeyS', 'Space', 'Escape'].includes(e.code)) {
         e.preventDefault();
       }
+      
+      // ESC key pauses and releases pointer lock
+      if (e.code === 'Escape') {
+        document.exitPointerLock();
+        return;
+      }
+      
       keysRef.current[e.code] = true;
       setUiState((prev) => ({ ...prev, keys: { ...keysRef.current } }));
     };
+    
     const handleKeyUp = (e) => {
       keysRef.current[e.code] = false;
       setUiState((prev) => ({ ...prev, keys: { ...keysRef.current } }));
     };
+
+    const handlePointerLockChange = () => {
+      const isLocked = document.pointerLockElement === canvasRef.current;
+      isPointerLockedRef.current = isLocked;
+      setUiState((prev) => ({ ...prev, isPaused: !isLocked && prev.gameStarted }));
+    };
+
+    const handleMouseMove = (e) => {
+      if (isPointerLockedRef.current && canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        mousePositionRef.current.x += e.movementX;
+        mousePositionRef.current.y += e.movementY;
+        
+        // Keep mouse position within canvas bounds
+        mousePositionRef.current.x = Math.max(0, Math.min(CANVAS_WIDTH, mousePositionRef.current.x));
+        mousePositionRef.current.y = Math.max(0, Math.min(CANVAS_HEIGHT, mousePositionRef.current.y));
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    document.addEventListener('pointerlockchange', handlePointerLockChange);
+    document.addEventListener('mousemove', handleMouseMove);
+    
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      document.removeEventListener('pointerlockchange', handlePointerLockChange);
+      document.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
 
   const startGame = () => {
     gameStartedRef.current = true;
-    setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false }));
+    setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false, isPaused: false }));
     scoreRef.current = 0;
     livesRef.current = 3;
     gameOverRef.current = false;
     shipRef.current = new Ship(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
     bulletsRef.current = [];
+    
+    // Initialize mouse position to center of canvas
+    mousePositionRef.current = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 };
+    
     // Re-initialize asteroids
     const initialAsteroids = [];
     for (let i = 0; i < 5; i++) {
@@ -91,22 +130,33 @@ function App() {
     asteroidsRef.current = initialAsteroids;
   };
 
-  const update = useCallback(() => {
-    if (gameOverRef.current || !gameStartedRef.current) return;
+  const handleCanvasClick = () => {
+    if (canvasRef.current) {
+      canvasRef.current.requestPointerLock();
+    }
+  };
 
-    // Update ship
+  const update = useCallback(() => {
+    if (gameOverRef.current || !gameStartedRef.current || uiState.isPaused) return;
+
+    // Update ship - now follows mouse
     const keys = keysRef.current;
     const ship = shipRef.current;
-    if (keys.KeyA) ship.angle -= ship.rotationSpeed;
-    if (keys.KeyD) ship.angle += ship.rotationSpeed;
-    if (keys.KeyW) {
+    const mousePos = mousePositionRef.current;
+    
+    // Calculate angle to mouse
+    const dx = mousePos.x - ship.x;
+    const dy = mousePos.y - ship.y;
+    ship.angle = Math.atan2(dy, dx);
+    
+    // Automatic thrust when mouse is far from ship
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance > 20) { // Only thrust if mouse is far enough
       ship.vx += Math.cos(ship.angle) * ship.speed;
       ship.vy += Math.sin(ship.angle) * ship.speed;
     }
-    if (keys.KeyS) {
-      ship.vx *= 0.9;
-      ship.vy *= 0.9;
-    }
+    
+    // Apply velocity and friction
     ship.x += ship.vx;
     ship.y += ship.vy;
     ship.vx *= 0.99;
@@ -235,6 +285,7 @@ function App() {
         lives: livesRef.current,
         gameOver: gameOverRef.current,
         gameStarted: prev.gameStarted,
+        isPaused: prev.isPaused,
         frameCount: prev.frameCount + 1,
         keys: { ...keysRef.current }
       }));
@@ -251,7 +302,21 @@ function App() {
 
   return (
     <div className="app">
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
+      <div className="game-container">
+        <canvas 
+          ref={canvasRef} 
+          width={CANVAS_WIDTH} 
+          height={CANVAS_HEIGHT} 
+          onClick={handleCanvasClick}
+          className={uiState.isPaused ? 'paused' : ''}
+        />
+        {uiState.isPaused && uiState.gameStarted && (
+          <div className="pause-overlay">
+            <div className="pause-text">PAUSED</div>
+            <div className="pause-instruction">Click to resume</div>
+          </div>
+        )}
+      </div>
       <div className="ui">
         <div>Score: {uiState.score}</div>
         <div>Lives: {uiState.lives}</div>
