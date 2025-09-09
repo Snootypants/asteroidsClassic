@@ -80,12 +80,20 @@ function App() {
     const handlePointerLockChange = () => {
       const isLocked = document.pointerLockElement === canvasRef.current;
       isPointerLockedRef.current = isLocked;
+      
+      // When pointer lock is acquired, initialize mouse position ahead of ship
+      if (isLocked && shipRef.current) {
+        mousePositionRef.current = { 
+          x: shipRef.current.x + 50 * Math.cos(shipRef.current.angle), 
+          y: shipRef.current.y + 50 * Math.sin(shipRef.current.angle)
+        };
+      }
+      
       setUiState((prev) => ({ ...prev, isPaused: !isLocked && prev.gameStarted }));
     };
 
     const handleMouseMove = (e) => {
       if (isPointerLockedRef.current && canvasRef.current) {
-        const rect = canvasRef.current.getBoundingClientRect();
         mousePositionRef.current.x += e.movementX;
         mousePositionRef.current.y += e.movementY;
         
@@ -95,16 +103,32 @@ function App() {
       }
     };
 
+    const handleMouseDown = (e) => {
+      if (e.button === 0 && isPointerLockedRef.current && gameStartedRef.current && !uiState.isPaused) {
+        // Left click shooting
+        const ship = shipRef.current;
+        if (ship && bulletsRef.current.length < 5) {
+          const currentTime = Date.now();
+          if (currentTime - lastShotTimeRef.current >= BULLET_FIRE_RATE) {
+            bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
+            lastShotTimeRef.current = currentTime;
+          }
+        }
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     document.addEventListener('pointerlockchange', handlePointerLockChange);
     document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mousedown', handleMouseDown);
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       document.removeEventListener('pointerlockchange', handlePointerLockChange);
       document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mousedown', handleMouseDown);
     };
   }, []);
 
@@ -117,8 +141,11 @@ function App() {
     shipRef.current = new Ship(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
     bulletsRef.current = [];
     
-    // Initialize mouse position to center of canvas
-    mousePositionRef.current = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 };
+    // Initialize mouse position ahead of ship based on initial angle (0)
+    mousePositionRef.current = { 
+      x: CANVAS_WIDTH / 2 + 50, 
+      y: CANVAS_HEIGHT / 2 
+    };
     
     // Re-initialize asteroids
     const initialAsteroids = [];
