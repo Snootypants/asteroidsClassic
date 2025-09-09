@@ -21,6 +21,7 @@ function App() {
     score: 0,
     lives: 3,
     gameOver: false,
+    gameStarted: false,
     frameCount: 0,
     keys: {}
   });
@@ -57,8 +58,25 @@ function App() {
     };
   }, []);
 
+  const startGame = () => {
+    setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false }));
+    scoreRef.current = 0;
+    livesRef.current = 3;
+    gameOverRef.current = false;
+    shipRef.current = new Ship(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+    bulletsRef.current = [];
+    // Re-initialize asteroids
+    const initialAsteroids = [];
+    for (let i = 0; i < 5; i++) {
+      const x = Math.random() * CANVAS_WIDTH;
+      const y = Math.random() * CANVAS_HEIGHT;
+      initialAsteroids.push(new Asteroid(x, y));
+    }
+    asteroidsRef.current = initialAsteroids;
+  };
+
   const update = useCallback(() => {
-    if (gameOverRef.current) return;
+    if (gameOverRef.current || !uiState.gameStarted) return;
 
     // Update ship
     const keys = keysRef.current;
@@ -191,6 +209,7 @@ function App() {
         score: scoreRef.current,
         lives: livesRef.current,
         gameOver: gameOverRef.current,
+        gameStarted: prev.gameStarted,
         frameCount: prev.frameCount + 1,
         keys: { ...keysRef.current }
       }));
@@ -211,9 +230,15 @@ function App() {
       <div className="ui">
         <div>Score: {uiState.score}</div>
         <div>Lives: {uiState.lives}</div>
-        <div>Frame: {uiState.frameCount}</div>
-        <div>Keys: {JSON.stringify(uiState.keys)}</div>
         {uiState.gameOver && <div className="game-over">Game Over</div>}
+      </div>
+      <div className="buttons">
+        {!uiState.gameStarted && (
+          <button onClick={startGame} className="game-button">Start Game</button>
+        )}
+        {uiState.gameStarted && (
+          <button onClick={startGame} className="game-button">New Game</button>
+        )}
       </div>
     </div>
   );

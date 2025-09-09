@@ -1,14 +1,36 @@
 import { ASTEROID_SPEED, ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL } from '../utils/constants.js';
 
 export class Asteroid {
-  constructor(x, y, size = ASTEROID_SIZE_LARGE) {
+  constructor(x, y, size = ASTEROID_SIZE_LARGE, parentVelocity = null) {
     this.x = x;
     this.y = y;
-    this.vx = (Math.random() - 0.5) * ASTEROID_SPEED * 2;
-    this.vy = (Math.random() - 0.5) * ASTEROID_SPEED * 2;
+    
+    // If this asteroid is split from a parent, inherit and vary the velocity
+    if (parentVelocity) {
+      const speedScale = 0.8 + Math.random() * 0.4; // 0.8 to 1.2 of parent speed
+      const angleVariation = (Math.random() - 0.5) * Math.PI; // Up to 90 degrees variation
+      const parentSpeed = Math.sqrt(parentVelocity.vx * parentVelocity.vx + parentVelocity.vy * parentVelocity.vy);
+      const parentAngle = Math.atan2(parentVelocity.vy, parentVelocity.vx);
+      const newAngle = parentAngle + angleVariation;
+      const newSpeed = parentSpeed * speedScale;
+      
+      this.vx = Math.cos(newAngle) * newSpeed;
+      this.vy = Math.sin(newAngle) * newSpeed;
+    } else {
+      this.vx = (Math.random() - 0.5) * ASTEROID_SPEED * 2;
+      this.vy = (Math.random() - 0.5) * ASTEROID_SPEED * 2;
+    }
+    
     this.size = size;
     this.angle = Math.random() * Math.PI * 2;
     this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+    
+    // Generate random shape variations
+    this.points = 8 + Math.floor(Math.random() * 4); // 8-11 points
+    this.radiusVariations = [];
+    for (let i = 0; i < this.points; i++) {
+      this.radiusVariations.push(0.7 + Math.random() * 0.6); // 0.7 to 1.3 of base radius
+    }
   }
 
   update() {
@@ -23,15 +45,16 @@ export class Asteroid {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
     ctx.beginPath();
-    const points = 8;
-    for (let i = 0; i < points; i++) {
-      const angle = (i / points) * Math.PI * 2;
-      const radius = this.size;
+    
+    for (let i = 0; i < this.points; i++) {
+      const angle = (i / this.points) * Math.PI * 2;
+      const radius = this.size * this.radiusVariations[i];
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius;
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
+    
     ctx.closePath();
     ctx.strokeStyle = 'white';
     ctx.stroke();
@@ -39,15 +62,17 @@ export class Asteroid {
   }
 
   split() {
+    const parentVel = { vx: this.vx, vy: this.vy };
+    
     if (this.size === ASTEROID_SIZE_LARGE) {
       return [
-        new Asteroid(this.x, this.y, ASTEROID_SIZE_MEDIUM),
-        new Asteroid(this.x, this.y, ASTEROID_SIZE_MEDIUM)
+        new Asteroid(this.x, this.y, ASTEROID_SIZE_MEDIUM, parentVel),
+        new Asteroid(this.x, this.y, ASTEROID_SIZE_MEDIUM, parentVel)
       ];
     } else if (this.size === ASTEROID_SIZE_MEDIUM) {
       return [
-        new Asteroid(this.x, this.y, ASTEROID_SIZE_SMALL),
-        new Asteroid(this.x, this.y, ASTEROID_SIZE_SMALL)
+        new Asteroid(this.x, this.y, ASTEROID_SIZE_SMALL, parentVel),
+        new Asteroid(this.x, this.y, ASTEROID_SIZE_SMALL, parentVel)
       ];
     }
     return [];
