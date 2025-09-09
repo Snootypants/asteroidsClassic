@@ -1,4 +1,4 @@
-import { BULLET_SPEED, BULLET_LIFETIME } from '../utils/constants.js';
+import { BULLET_SPEED, BULLET_LIFETIME, BULLET_SIZE } from '../utils/constants.js';
 
 export class Bullet {
   constructor(x, y, angle) {
@@ -7,7 +7,7 @@ export class Bullet {
     this.vx = Math.cos(angle) * BULLET_SPEED;
     this.vy = Math.sin(angle) * BULLET_SPEED;
     this.lifetime = BULLET_LIFETIME;
-    this.size = 2;
+    this.size = BULLET_SIZE;
   }
 
   update() {

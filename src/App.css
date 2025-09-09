@@ -16,10 +16,6 @@ canvas {
   cursor: crosshair;
 }
 
-canvas:not(.pointer-locked) {
-  cursor: crosshair;
-}
-
 canvas.pointer-locked {
   cursor: none;
 }

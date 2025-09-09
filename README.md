@@ -1,12 +1,46 @@
-# React + Vite
+# Asteroids Game
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern recreation of the classic Asteroids arcade game built with React and HTML5 Canvas.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Mouse + Keyboard Controls**: Ship aims at mouse cursor, W/S keys for forward/backward thrust
+- **Crosshair Aiming**: Visible crosshair shows exact aiming point
+- **Dual Shooting Modes**: Single click for individual shots, hold for continuous firing (4 shots/sec)
+- **Classic Physics**: Momentum-based movement with smooth friction
+- **Dynamic Asteroid Splitting**: Large asteroids break into smaller pieces when shot
+- **Starfield Background**: Randomly generated stars with varying brightness
+- **Pointer Lock Integration**: Click canvas to capture mouse, ESC to release and pause
+- **Professional UI**: Clean title screen, pause overlay, score tracking
 
-## Expanding the ESLint configuration
+## Controls
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Mouse**: Aim the ship by moving the cursor
+- **Click Canvas**: Capture mouse pointer and start/resume game  
+- **Left Click**: Shoot (single shot or hold for continuous)
+- **W Key**: Forward thrust
+- **S Key**: Brake (slow down)
+- **ESC Key**: Pause game and release mouse
+
+## Getting Started
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## Development
+
+The game is built using:
+- **React** with hooks for state management
+- **HTML5 Canvas** for rendering
+- **Vite** for fast development and building
+- **Modular Architecture** with separate classes for game objects
+
+All game configuration values are centralized in `src/utils/constants.js` for easy tuning.

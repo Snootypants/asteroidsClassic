@@ -3,7 +3,7 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD } from './utils/constants.js';
 import './App.css';
 
 function App() {
@@ -23,21 +23,21 @@ function App() {
   const isPointerLockedRef = useRef(false);
   const isMouseDownRef = useRef(false);
   const continuousShootingRef = useRef(null);
+  const continuousShootingTimeoutRef = useRef(null);
+  const isPausedRef = useRef(false);
   const [uiState, setUiState] = useState({
     score: 0,
-    lives: 3,
+    lives: INITIAL_LIVES,
     gameOver: false,
     gameStarted: false,
     isPaused: false,
-    frameCount: 0,
-    keys: {},
     isPointerLocked: false
   });
 
   // Initialize asteroids and stars
   useEffect(() => {
     const initialAsteroids = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
       const x = Math.random() * CANVAS_WIDTH;
       const y = Math.random() * CANVAS_HEIGHT;
       initialAsteroids.push(new Asteroid(x, y));
@@ -52,7 +52,7 @@ function App() {
         x: Math.random() * CANVAS_WIDTH,
         y: Math.random() * CANVAS_HEIGHT,
         brightness: brightness,
-        size: brightness > 0.7 ? 2 : brightness > 0.4 ? 1.5 : 1
+        size: brightness > STAR_LARGE_THRESHOLD ? 2 : brightness > STAR_MEDIUM_THRESHOLD ? 1.5 : 1
       });
     }
     starsRef.current = stars;
@@ -72,20 +72,20 @@ function App() {
       }
       
       keysRef.current[e.code] = true;
-      setUiState((prev) => ({ ...prev, keys: { ...keysRef.current } }));
     };
     
     const handleKeyUp = (e) => {
       keysRef.current[e.code] = false;
-      setUiState((prev) => ({ ...prev, keys: { ...keysRef.current } }));
     };
 
     const handlePointerLockChange = () => {
       const isLocked = document.pointerLockElement === canvasRef.current;
       isPointerLockedRef.current = isLocked;
+      const paused = !isLocked && gameStartedRef.current;
+      isPausedRef.current = paused;
       setUiState((prev) => ({ 
         ...prev, 
-        isPaused: !isLocked && prev.gameStarted,
+        isPaused: paused,
         isPointerLocked: isLocked
       }));
     };
@@ -102,22 +102,29 @@ function App() {
     };
 
     const handleMouseDown = (e) => {
-      if (e.button === 0 && isPointerLockedRef.current && gameStartedRef.current && !uiState.isPaused) {
+      if (e.button === 0 && isPointerLockedRef.current && gameStartedRef.current && !gameOverRef.current) {
         isMouseDownRef.current = true;
         // Immediate shot on click
         shootBullet();
         // Start continuous shooting after a delay
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           if (isMouseDownRef.current) {
             startContinuousShooting();
           }
-        }, 250);
+        }, CONTINUOUS_FIRE_RATE);
+        // Store timeout ID for cleanup
+        continuousShootingTimeoutRef.current = timeoutId;
       }
     };
 
     const handleMouseUp = (e) => {
       if (e.button === 0) {
         isMouseDownRef.current = false;
+        // Clear the timeout to prevent continuous shooting from starting
+        if (continuousShootingTimeoutRef.current) {
+          clearTimeout(continuousShootingTimeoutRef.current);
+          continuousShootingTimeoutRef.current = null;
+        }
         stopContinuousShooting();
       }
     };
@@ -137,6 +144,9 @@ function App() {
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mouseup', handleMouseUp);
       stopContinuousShooting();
+      if (continuousShootingTimeoutRef.current) {
+        clearTimeout(continuousShootingTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -144,20 +154,20 @@ function App() {
     gameStartedRef.current = true;
     setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false, isPaused: false }));
     scoreRef.current = 0;
-    livesRef.current = 3;
+    livesRef.current = INITIAL_LIVES;
     gameOverRef.current = false;
     shipRef.current = new Ship(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
     bulletsRef.current = [];
     
     // Initialize mouse position ahead of ship based on initial angle (0)
     mousePositionRef.current = { 
-      x: CANVAS_WIDTH / 2 + 50, 
+      x: CANVAS_WIDTH / 2 + MOUSE_OFFSET, 
       y: CANVAS_HEIGHT / 2 
     };
     
     // Re-initialize asteroids
     const initialAsteroids = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
       const x = Math.random() * CANVAS_WIDTH;
       const y = Math.random() * CANVAS_HEIGHT;
       initialAsteroids.push(new Asteroid(x, y));
@@ -176,7 +186,7 @@ function App() {
     if (continuousShootingRef.current) return;
     continuousShootingRef.current = setInterval(() => {
       shootBullet();
-    }, 250); // 4 shots per second
+    }, CONTINUOUS_FIRE_RATE); // 4 shots per second
   }, [shootBullet]);
 
   const stopContinuousShooting = useCallback(() => {
@@ -195,7 +205,7 @@ function App() {
   };
 
   const update = useCallback(() => {
-    if (gameOverRef.current || !gameStartedRef.current || uiState.isPaused) return;
+    if (gameOverRef.current || !gameStartedRef.current || isPausedRef.current) return;
 
     // Update ship - aims at crosshair, moves with W/S
     const keys = keysRef.current;
@@ -260,7 +270,7 @@ function App() {
           if (!bulletsToRemove.includes(bi)) bulletsToRemove.push(bi);
           if (!asteroidsToRemove.includes(ai)) asteroidsToRemove.push(ai);
           newAsteroids.push(...asteroid.split());
-          scoreRef.current += 10;
+          scoreRef.current += SCORE_PER_ASTEROID;
         }
       });
     });
@@ -331,28 +341,15 @@ function App() {
       ctx.lineWidth = 2;
       ctx.beginPath();
       // Horizontal line
-      ctx.moveTo(mousePos.x - 10, mousePos.y);
-      ctx.lineTo(mousePos.x + 10, mousePos.y);
+      ctx.moveTo(mousePos.x - CROSSHAIR_SIZE, mousePos.y);
+      ctx.lineTo(mousePos.x + CROSSHAIR_SIZE, mousePos.y);
       // Vertical line
-      ctx.moveTo(mousePos.x, mousePos.y - 10);
-      ctx.lineTo(mousePos.x, mousePos.y + 10);
+      ctx.moveTo(mousePos.x, mousePos.y - CROSSHAIR_SIZE);
+      ctx.lineTo(mousePos.x, mousePos.y + CROSSHAIR_SIZE);
       ctx.stroke();
     }
   }, []);
 
-  const gameLoop = useCallback(() => {
-    update();
-    render();
-    setUiState((prev) => ({
-      ...prev,
-      score: scoreRef.current,
-      lives: livesRef.current,
-      gameOver: gameOverRef.current,
-      frameCount: prev.frameCount + 1,
-      keys: { ...keysRef.current }
-    }));
-    requestRef.current = requestAnimationFrame(gameLoop);
-  }, []);
 
   useEffect(() => {
     const loop = () => {
@@ -362,11 +359,7 @@ function App() {
         ...prev,
         score: scoreRef.current,
         lives: livesRef.current,
-        gameOver: gameOverRef.current,
-        gameStarted: prev.gameStarted,
-        isPaused: prev.isPaused,
-        frameCount: prev.frameCount + 1,
-        keys: { ...keysRef.current }
+        gameOver: gameOverRef.current
       }));
       requestRef.current = requestAnimationFrame(loop);
     };
@@ -391,7 +384,7 @@ function App() {
         />
         {!uiState.gameStarted && (
           <div className="title-overlay">
-            <div className="title-text">'STROIDS</div>
+            <div className="title-text">ASTEROIDS</div>
             <div className="start-instruction">Click to start</div>
           </div>
         )}

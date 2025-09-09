@@ -1,4 +1,4 @@
-import { SHIP_SIZE, SHIP_SPEED, SHIP_ROTATION_SPEED } from '../utils/constants.js';
+import { SHIP_SIZE, SHIP_SPEED } from '../utils/constants.js';
 
 export class Ship {
   constructor(x, y) {
@@ -9,7 +9,6 @@ export class Ship {
     this.angle = 0;
     this.size = SHIP_SIZE;
     this.speed = SHIP_SPEED;
-    this.rotationSpeed = SHIP_ROTATION_SPEED;
   }
 
   draw(ctx) {
