@@ -3,12 +3,15 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MAX_ZOOM_OUT, MIN_ZOOM } from './utils/constants.js';
+import { Camera } from './utils/camera.js';
+import { Minimap } from './components/Minimap.js';
 import './App.css';
 
 function App() {
   const canvasRef = useRef(null);
-  const shipRef = useRef(new Ship(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2));
+  const shipRef = useRef(new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2));
+  const cameraRef = useRef(new Camera());
   const asteroidsRef = useRef([]);
   const bulletsRef = useRef([]);
   const keysRef = useRef({});
@@ -38,21 +41,22 @@ function App() {
   useEffect(() => {
     const initialAsteroids = [];
     for (let i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
-      const x = Math.random() * CANVAS_WIDTH;
-      const y = Math.random() * CANVAS_HEIGHT;
+      const x = Math.random() * WORLD_WIDTH;
+      const y = Math.random() * WORLD_HEIGHT;
       initialAsteroids.push(new Asteroid(x, y));
     }
     asteroidsRef.current = initialAsteroids;
 
-    // Generate stars
+    // Generate stars for parallax (distributed across larger area)
     const stars = [];
-    for (let i = 0; i < STAR_COUNT; i++) {
+    for (let i = 0; i < STAR_COUNT * 3; i++) { // More stars for bigger world
       const brightness = STAR_MIN_BRIGHTNESS + Math.random() * (STAR_MAX_BRIGHTNESS - STAR_MIN_BRIGHTNESS);
       stars.push({
-        x: Math.random() * CANVAS_WIDTH,
-        y: Math.random() * CANVAS_HEIGHT,
+        x: Math.random() * WORLD_WIDTH * 1.5, // Spread beyond world boundaries
+        y: Math.random() * WORLD_HEIGHT * 1.5,
         brightness: brightness,
-        size: brightness > STAR_LARGE_THRESHOLD ? 2 : brightness > STAR_MEDIUM_THRESHOLD ? 1.5 : 1
+        size: brightness > STAR_LARGE_THRESHOLD ? 2 : brightness > STAR_MEDIUM_THRESHOLD ? 1.5 : 1,
+        parallax: 0.3 + Math.random() * 0.4 // Random parallax speed (0.3-0.7)
       });
     }
     starsRef.current = stars;
@@ -92,12 +96,15 @@ function App() {
 
     const handleMouseMove = (e) => {
       if (isPointerLockedRef.current && canvasRef.current) {
-        mousePositionRef.current.x += e.movementX;
-        mousePositionRef.current.y += e.movementY;
+        const camera = cameraRef.current;
+        const sensitivity = camera.zoom; // Movement scales with zoom
         
-        // Keep mouse position within canvas bounds
-        mousePositionRef.current.x = Math.max(0, Math.min(CANVAS_WIDTH, mousePositionRef.current.x));
-        mousePositionRef.current.y = Math.max(0, Math.min(CANVAS_HEIGHT, mousePositionRef.current.y));
+        mousePositionRef.current.x += e.movementX * sensitivity;
+        mousePositionRef.current.y += e.movementY * sensitivity;
+        
+        // Keep mouse position within world bounds
+        mousePositionRef.current.x = Math.max(0, Math.min(WORLD_WIDTH, mousePositionRef.current.x));
+        mousePositionRef.current.y = Math.max(0, Math.min(WORLD_HEIGHT, mousePositionRef.current.y));
       }
     };
 
@@ -129,12 +136,20 @@ function App() {
       }
     };
 
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const camera = cameraRef.current;
+      const zoomDelta = e.deltaY > 0 ? ZOOM_SPEED : -ZOOM_SPEED;
+      camera.setZoom(camera.targetZoom + zoomDelta);
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     document.addEventListener('pointerlockchange', handlePointerLockChange);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('wheel', handleWheel);
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
@@ -143,6 +158,7 @@ function App() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('wheel', handleWheel);
       stopContinuousShooting();
       if (continuousShootingTimeoutRef.current) {
         clearTimeout(continuousShootingTimeoutRef.current);
@@ -156,20 +172,27 @@ function App() {
     scoreRef.current = 0;
     livesRef.current = INITIAL_LIVES;
     gameOverRef.current = false;
-    shipRef.current = new Ship(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+    shipRef.current = new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
     bulletsRef.current = [];
+    
+    // Reset camera
+    const camera = cameraRef.current;
+    camera.x = WORLD_WIDTH / 2;
+    camera.y = WORLD_HEIGHT / 2;
+    camera.zoom = 1;
+    camera.targetZoom = 1;
     
     // Initialize mouse position ahead of ship based on initial angle (0)
     mousePositionRef.current = { 
-      x: CANVAS_WIDTH / 2 + MOUSE_OFFSET, 
-      y: CANVAS_HEIGHT / 2 
+      x: WORLD_WIDTH / 2 + MOUSE_OFFSET, 
+      y: WORLD_HEIGHT / 2 
     };
     
     // Re-initialize asteroids
     const initialAsteroids = [];
     for (let i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
-      const x = Math.random() * CANVAS_WIDTH;
-      const y = Math.random() * CANVAS_HEIGHT;
+      const x = Math.random() * WORLD_WIDTH;
+      const y = Math.random() * WORLD_HEIGHT;
       initialAsteroids.push(new Asteroid(x, y));
     }
     asteroidsRef.current = initialAsteroids;
@@ -207,6 +230,10 @@ function App() {
   const update = useCallback(() => {
     if (gameOverRef.current || !gameStartedRef.current || isPausedRef.current) return;
 
+    // Update camera zoom
+    const camera = cameraRef.current;
+    camera.updateZoom();
+
     // Update ship - aims at crosshair, moves with W/S
     const keys = keysRef.current;
     const ship = shipRef.current;
@@ -235,18 +262,21 @@ function App() {
       ship.vx *= 0.99;
       ship.vy *= 0.99;
     }
-    wrapPosition(ship, CANVAS_WIDTH, CANVAS_HEIGHT);
+    wrapPosition(ship); // World wrapping
+
+    // Update camera to follow ship
+    camera.followShip(ship.x, ship.y);
 
     // Update asteroids
     asteroidsRef.current.forEach((asteroid) => {
       asteroid.update();
-      wrapPosition(asteroid, CANVAS_WIDTH, CANVAS_HEIGHT);
+      wrapPosition(asteroid); // World wrapping
     });
 
     // Update bullets
     bulletsRef.current.forEach((bullet) => {
       bullet.update();
-      wrapPosition(bullet, CANVAS_WIDTH, CANVAS_HEIGHT);
+      wrapPosition(bullet); // World wrapping
     });
     bulletsRef.current = bulletsRef.current.filter((bullet) => !bullet.isExpired());
 
@@ -292,7 +322,7 @@ function App() {
       if (checkCollision(shipRef.current, asteroid)) {
         livesRef.current -= 1;
         if (livesRef.current <= 0) gameOverRef.current = true;
-        shipRef.current = new Ship(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+        shipRef.current = new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
         shipCollisionIndex = ai;
       }
     });
@@ -309,45 +339,89 @@ function App() {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Draw stars first (background)
+    const camera = cameraRef.current;
+
+    // Draw parallax stars first (background)
     starsRef.current.forEach((star) => {
-      ctx.save();
-      ctx.globalAlpha = star.brightness;
-      ctx.fillStyle = 'white';
-      ctx.fillRect(star.x, star.y, star.size, star.size);
-      ctx.restore();
+      // Calculate parallax position
+      const parallaxX = star.x - camera.x * star.parallax;
+      const parallaxY = star.y - camera.y * star.parallax;
+      
+      const screenPos = camera.worldToScreen(parallaxX, parallaxY);
+      
+      // Only draw if visible (with margin for star wrapping)
+      if (screenPos.x >= -50 && screenPos.x <= CANVAS_WIDTH + 50 && 
+          screenPos.y >= -50 && screenPos.y <= CANVAS_HEIGHT + 50) {
+        ctx.save();
+        ctx.globalAlpha = star.brightness;
+        ctx.fillStyle = 'white';
+        ctx.fillRect(screenPos.x, screenPos.y, star.size / camera.zoom, star.size / camera.zoom);
+        ctx.restore();
+      }
     });
 
-    if (shipRef.current) {
-      shipRef.current.draw(ctx);
+    // Draw ship
+    if (shipRef.current && camera.isVisible(shipRef.current.x, shipRef.current.y)) {
+      const screenPos = camera.worldToScreen(shipRef.current.x, shipRef.current.y);
+      ctx.save();
+      ctx.translate(screenPos.x, screenPos.y);
+      ctx.scale(1/camera.zoom, 1/camera.zoom);
+      ctx.rotate(shipRef.current.angle);
+      // Draw ship triangle
+      const size = shipRef.current.size;
+      ctx.beginPath();
+      ctx.moveTo(size, 0);
+      ctx.lineTo(-size / 2, -size / 2);
+      ctx.lineTo(-size / 2, size / 2);
+      ctx.closePath();
+      ctx.strokeStyle = 'white';
+      ctx.stroke();
+      ctx.restore();
     }
     
+    // Draw asteroids (with culling)
     asteroidsRef.current.forEach((asteroid) => {
-      if (asteroid) {
+      if (asteroid && camera.isVisible(asteroid.x, asteroid.y, asteroid.size)) {
+        const screenPos = camera.worldToScreen(asteroid.x, asteroid.y);
+        ctx.save();
+        ctx.translate(screenPos.x, screenPos.y);
+        ctx.scale(1/camera.zoom, 1/camera.zoom);
+        // Draw asteroid using its draw method
+        ctx.translate(-asteroid.x, -asteroid.y);
         asteroid.draw(ctx);
+        ctx.restore();
       }
     });
     
+    // Draw bullets (with culling)
     bulletsRef.current.forEach((bullet) => {
-      if (bullet) {
-        bullet.draw(ctx);
+      if (bullet && camera.isVisible(bullet.x, bullet.y, bullet.size)) {
+        const screenPos = camera.worldToScreen(bullet.x, bullet.y);
+        ctx.beginPath();
+        ctx.arc(screenPos.x, screenPos.y, bullet.size / camera.zoom, 0, Math.PI * 2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
       }
     });
 
     // Draw crosshair at mouse position when pointer is locked
     if (isPointerLockedRef.current && gameStartedRef.current && !uiState.isPaused) {
       const mousePos = mousePositionRef.current;
+      const screenPos = camera.worldToScreen(mousePos.x, mousePos.y);
       ctx.strokeStyle = 'white';
       ctx.lineWidth = 2;
       ctx.beginPath();
       // Horizontal line
-      ctx.moveTo(mousePos.x - CROSSHAIR_SIZE, mousePos.y);
-      ctx.lineTo(mousePos.x + CROSSHAIR_SIZE, mousePos.y);
+      ctx.moveTo(screenPos.x - CROSSHAIR_SIZE, screenPos.y);
+      ctx.lineTo(screenPos.x + CROSSHAIR_SIZE, screenPos.y);
       // Vertical line
-      ctx.moveTo(mousePos.x, mousePos.y - CROSSHAIR_SIZE);
-      ctx.lineTo(mousePos.x, mousePos.y + CROSSHAIR_SIZE);
+      ctx.moveTo(screenPos.x, screenPos.y - CROSSHAIR_SIZE);
+      ctx.lineTo(screenPos.x, screenPos.y + CROSSHAIR_SIZE);
       ctx.stroke();
     }
+
+    // Draw minimap
+    Minimap.draw(ctx, shipRef.current, asteroidsRef.current, camera);
   }, []);
 
 

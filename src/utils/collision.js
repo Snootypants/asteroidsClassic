@@ -1,3 +1,5 @@
+import { WORLD_WIDTH, WORLD_HEIGHT } from './constants.js';
+
 // Utility functions for collision detection
 export function checkCollision(obj1, obj2) {
   const dx = obj1.x - obj2.x;
@@ -6,7 +8,17 @@ export function checkCollision(obj1, obj2) {
   return distance < obj1.size + obj2.size;
 }
 
-export function wrapPosition(obj, canvasWidth, canvasHeight) {
+// World wrapping for big map
+export function wrapPosition(obj, width = WORLD_WIDTH, height = WORLD_HEIGHT) {
+  if (obj.x < 0) obj.x = width;
+  if (obj.x > width) obj.x = 0;
+  if (obj.y < 0) obj.y = height;
+  if (obj.y > height) obj.y = 0;
+  return obj;
+}
+
+// Legacy viewport wrapping (kept for compatibility)
+export function wrapViewport(obj, canvasWidth, canvasHeight) {
   if (obj.x < 0) obj.x = canvasWidth;
   if (obj.x > canvasWidth) obj.x = 0;
   if (obj.y < 0) obj.y = canvasHeight;

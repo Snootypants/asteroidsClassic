@@ -27,3 +27,22 @@ export const BULLET_SIZE = 2;
 // Star brightness thresholds
 export const STAR_LARGE_THRESHOLD = 0.7;
 export const STAR_MEDIUM_THRESHOLD = 0.4;
+
+// Phase 2: Big Map constants
+export const WORLD_WIDTH = CANVAS_WIDTH * 5; // 4000px
+export const WORLD_HEIGHT = CANVAS_HEIGHT * 5; // 3000px
+export const VIEWPORT_WIDTH = CANVAS_WIDTH;
+export const VIEWPORT_HEIGHT = CANVAS_HEIGHT;
+
+// Zoom system
+export const MAX_ZOOM_OUT = 3;
+export const MIN_ZOOM = 1;
+export const ZOOM_SPEED = 0.1;
+
+// Bullet range (twice viewport width)
+export const BULLET_RANGE = VIEWPORT_WIDTH * 2;
+
+// Minimap
+export const MINIMAP_WIDTH = 160;
+export const MINIMAP_HEIGHT = 120;
+export const MINIMAP_SCALE = MINIMAP_WIDTH / WORLD_WIDTH;
