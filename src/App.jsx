@@ -79,18 +79,21 @@ function App() {
     shipRef.current = wrapPosition(ship, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Update asteroids
-    asteroidsRef.current = asteroidsRef.current.map((asteroid) => {
-      const updated = asteroid.update();
-      return wrapPosition(updated, CANVAS_WIDTH, CANVAS_HEIGHT);
+    asteroidsRef.current.forEach((asteroid) => {
+      asteroid.update();
+      const wrapped = wrapPosition(asteroid, CANVAS_WIDTH, CANVAS_HEIGHT);
+      asteroid.x = wrapped.x;
+      asteroid.y = wrapped.y;
     });
 
     // Update bullets
-    bulletsRef.current = bulletsRef.current
-      .map((bullet) => {
-        const updated = bullet.update();
-        return wrapPosition(updated, CANVAS_WIDTH, CANVAS_HEIGHT);
-      })
-      .filter((bullet) => !bullet.isExpired());
+    bulletsRef.current.forEach((bullet) => {
+      bullet.update();
+      const wrapped = wrapPosition(bullet, CANVAS_WIDTH, CANVAS_HEIGHT);
+      bullet.x = wrapped.x;
+      bullet.y = wrapped.y;
+    });
+    bulletsRef.current = bulletsRef.current.filter((bullet) => !bullet.isExpired());
 
     // Shooting
     if (keys.Space && bulletsRef.current.length < 5) {
@@ -98,31 +101,47 @@ function App() {
     }
 
     // Collisions
+    let asteroidsToRemove = [];
+    let bulletsToRemove = [];
     let newAsteroids = [];
-    let newBullets = [...bulletsRef.current];
+
     bulletsRef.current.forEach((bullet, bi) => {
       asteroidsRef.current.forEach((asteroid, ai) => {
         if (checkCollision(bullet, asteroid)) {
-          newBullets.splice(bi, 1);
-          asteroidsRef.current.splice(ai, 1);
+          if (!bulletsToRemove.includes(bi)) bulletsToRemove.push(bi);
+          if (!asteroidsToRemove.includes(ai)) asteroidsToRemove.push(ai);
           newAsteroids.push(...asteroid.split());
           scoreRef.current += 10;
         }
       });
     });
-    asteroidsRef.current = [...asteroidsRef.current, ...newAsteroids];
-    bulletsRef.current = newBullets;
+
+    // Remove collided items (iterate backwards to avoid index issues)
+    bulletsToRemove.sort((a, b) => b - a).forEach(index => {
+      bulletsRef.current.splice(index, 1);
+    });
+    asteroidsToRemove.sort((a, b) => b - a).forEach(index => {
+      asteroidsRef.current.splice(index, 1);
+    });
+    
+    // Add new asteroids from splits
+    asteroidsRef.current.push(...newAsteroids);
 
     // Ship collision
+    let shipCollisionIndex = -1;
     asteroidsRef.current.forEach((asteroid, ai) => {
       if (checkCollision(shipRef.current, asteroid)) {
         livesRef.current -= 1;
         if (livesRef.current <= 0) gameOverRef.current = true;
         shipRef.current = new Ship(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
-        // Remove the asteroid that hit the ship
-        asteroidsRef.current.splice(ai, 1);
+        shipCollisionIndex = ai;
       }
     });
+    
+    // Remove the asteroid that hit the ship
+    if (shipCollisionIndex >= 0) {
+      asteroidsRef.current.splice(shipCollisionIndex, 1);
+    }
   }, []);
 
   const render = useCallback(() => {
