@@ -3,7 +3,7 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS } from './utils/constants.js';
 import './App.css';
 
 function App() {
@@ -18,6 +18,7 @@ function App() {
   const gameStartedRef = useRef(false);
   const requestRef = useRef();
   const lastShotTimeRef = useRef(0);
+  const starsRef = useRef([]);
   const [uiState, setUiState] = useState({
     score: 0,
     lives: 3,
@@ -27,7 +28,7 @@ function App() {
     keys: {}
   });
 
-  // Initialize asteroids
+  // Initialize asteroids and stars
   useEffect(() => {
     const initialAsteroids = [];
     for (let i = 0; i < 5; i++) {
@@ -36,6 +37,19 @@ function App() {
       initialAsteroids.push(new Asteroid(x, y));
     }
     asteroidsRef.current = initialAsteroids;
+
+    // Generate stars
+    const stars = [];
+    for (let i = 0; i < STAR_COUNT; i++) {
+      const brightness = STAR_MIN_BRIGHTNESS + Math.random() * (STAR_MAX_BRIGHTNESS - STAR_MIN_BRIGHTNESS);
+      stars.push({
+        x: Math.random() * CANVAS_WIDTH,
+        y: Math.random() * CANVAS_HEIGHT,
+        brightness: brightness,
+        size: brightness > 0.7 ? 2 : brightness > 0.4 ? 1.5 : 1
+      });
+    }
+    starsRef.current = stars;
   }, []);
 
   // Handle keyboard input
@@ -170,6 +184,15 @@ function App() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Draw stars first (background)
+    starsRef.current.forEach((star) => {
+      ctx.save();
+      ctx.globalAlpha = star.brightness;
+      ctx.fillStyle = 'white';
+      ctx.fillRect(star.x, star.y, star.size, star.size);
+      ctx.restore();
+    });
 
     if (shipRef.current) {
       shipRef.current.draw(ctx);

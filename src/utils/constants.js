@@ -12,3 +12,6 @@ export const ASTEROID_SIZE_LARGE = 40;
 export const ASTEROID_SIZE_MEDIUM = 20;
 export const ASTEROID_SIZE_SMALL = 10;
 export const FPS = 60;
+export const STAR_COUNT = 180;
+export const STAR_MIN_BRIGHTNESS = 0.2;
+export const STAR_MAX_BRIGHTNESS = 1.0;
