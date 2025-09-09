@@ -3,7 +3,7 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE } from './utils/constants.js';
 import './App.css';
 
 function App() {
@@ -16,6 +16,7 @@ function App() {
   const livesRef = useRef(3);
   const gameOverRef = useRef(false);
   const requestRef = useRef();
+  const lastShotTimeRef = useRef(0);
   const [uiState, setUiState] = useState({
     score: 0,
     lives: 3,
@@ -91,9 +92,13 @@ function App() {
     });
     bulletsRef.current = bulletsRef.current.filter((bullet) => !bullet.isExpired());
 
-    // Shooting
+    // Shooting with rate limiting
     if (keys.Space && bulletsRef.current.length < 5) {
-      bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
+      const currentTime = Date.now();
+      if (currentTime - lastShotTimeRef.current >= BULLET_FIRE_RATE) {
+        bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
+        lastShotTimeRef.current = currentTime;
+      }
     }
 
     // Collisions
