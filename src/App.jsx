@@ -15,6 +15,7 @@ function App() {
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
   const gameOverRef = useRef(false);
+  const gameStartedRef = useRef(false);
   const requestRef = useRef();
   const lastShotTimeRef = useRef(0);
   const [uiState, setUiState] = useState({
@@ -59,6 +60,7 @@ function App() {
   }, []);
 
   const startGame = () => {
+    gameStartedRef.current = true;
     setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false }));
     scoreRef.current = 0;
     livesRef.current = 3;
@@ -76,7 +78,7 @@ function App() {
   };
 
   const update = useCallback(() => {
-    if (gameOverRef.current || !uiState.gameStarted) return;
+    if (gameOverRef.current || !gameStartedRef.current) return;
 
     // Update ship
     const keys = keysRef.current;
