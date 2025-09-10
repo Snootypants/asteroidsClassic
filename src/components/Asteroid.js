@@ -1,4 +1,12 @@
-import { ASTEROID_SPEED, ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL } from '../utils/constants.js';
+import {
+  ASTEROID_SPEED,
+  ASTEROID_SIZE_LARGE,
+  ASTEROID_SIZE_MEDIUM,
+  ASTEROID_SIZE_SMALL,
+  ASTEROID_SPLIT_SPEED_VARIANCE,
+  ASTEROID_ROTATION_VARIANCE,
+  ASTEROID_POINT_RANGE
+} from '../utils/constants.js';
 
 export class Asteroid {
   constructor(x, y, size = ASTEROID_SIZE_LARGE, parentVelocity = null) {
@@ -7,7 +15,8 @@ export class Asteroid {
     
     // If this asteroid is split from a parent, inherit and vary the velocity
     if (parentVelocity) {
-      const speedScale = 0.8 + Math.random() * 0.4; // 0.8 to 1.2 of parent speed
+      const speedScale =
+        1 - ASTEROID_SPLIT_SPEED_VARIANCE / 2 + Math.random() * ASTEROID_SPLIT_SPEED_VARIANCE;
       const angleVariation = (Math.random() - 0.5) * Math.PI; // Up to 90 degrees variation
       const parentSpeed = Math.sqrt(parentVelocity.vx * parentVelocity.vx + parentVelocity.vy * parentVelocity.vy);
       const parentAngle = Math.atan2(parentVelocity.vy, parentVelocity.vx);
@@ -23,10 +32,10 @@ export class Asteroid {
     
     this.size = size;
     this.angle = Math.random() * Math.PI * 2;
-    this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+    this.rotationSpeed = (Math.random() - 0.5) * ASTEROID_ROTATION_VARIANCE;
     
     // Generate random shape variations
-    this.points = 8 + Math.floor(Math.random() * 4); // 8-11 points
+    this.points = 8 + Math.floor(Math.random() * ASTEROID_POINT_RANGE); // 8-11 points
     this.radiusVariations = [];
     for (let i = 0; i < this.points; i++) {
       this.radiusVariations.push(0.7 + Math.random() * 0.6); // 0.7 to 1.3 of base radius
