@@ -45,9 +45,20 @@ export const ZOOM_SPEED = 0.1;
 // Bullet range (twice viewport width)
 export const BULLET_RANGE = VIEWPORT_WIDTH * 2;
 
-// Minimap
-export const MINIMAP_WIDTH = 160;
-export const MINIMAP_HEIGHT = 120;
+// Layout configuration
+export const MARGIN_LEFT = 100;
+export const MARGIN_RIGHT = 100;
+export const MARGIN_TOP = 100;
+export const MARGIN_BOTTOM = 200;
+
+// Derived aspect ratios
+export const PLAYFIELD_ASPECT_RATIO = CANVAS_WIDTH / CANVAS_HEIGHT;
+export const WORLD_ASPECT_RATIO = WORLD_HEIGHT / WORLD_WIDTH;
+
+// Minimap sizing
+export const MINIMAP_WIDTH_RATIO = 0.3276501112; // proportion of play area width
+export const MAX_MINIMAP_HEIGHT_RATIO = 0.2; // at most 20% of play height
+export const MINIMAP_OVERLAP_RATIO = 0.75; // show top quarter overlapping play area
 
 // Ship physics constants
 export const SHIP_FRICTION = 0.99;
