@@ -82,7 +82,7 @@ function App() {
   // Handle pointer lock and mouse/keyboard input
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (['KeyA', 'KeyD', 'KeyW', 'KeyS', 'Space', 'Escape'].includes(e.code)) {
+      if (['KeyW', 'KeyS', 'Space', 'Escape'].includes(e.code)) {
         e.preventDefault();
       }
       
