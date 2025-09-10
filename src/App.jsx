@@ -126,8 +126,8 @@ function App() {
     const handleMouseDown = (e) => {
       if (e.button === 0 && isPointerLockedRef.current && gameStartedRef.current && !gameOverRef.current) {
         isMouseDownRef.current = true;
-        // Immediate shot on click
-        shootBullet();
+        // Immediate shot on click - no bullet limit
+        shootBullet(true);
         // Start continuous shooting after a delay
         const timeoutId = setTimeout(() => {
           if (isMouseDownRef.current) {
@@ -216,17 +216,19 @@ function App() {
     generateStarfield();
   };
 
-  const shootBullet = useCallback(() => {
+  const shootBullet = useCallback((bypassLimit = false) => {
     const ship = shipRef.current;
-    if (ship && gameStartedRef.current && !gameOverRef.current && bulletsRef.current.length < MAX_BULLETS) {
-      bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
+    if (ship && gameStartedRef.current && !gameOverRef.current) {
+      if (bypassLimit || bulletsRef.current.length < MAX_BULLETS) {
+        bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
+      }
     }
   }, []);
 
   const startContinuousShooting = useCallback(() => {
     if (continuousShootingRef.current) return;
     continuousShootingRef.current = setInterval(() => {
-      shootBullet();
+      shootBullet(false); // Apply bullet limit for continuous shooting
     }, CONTINUOUS_FIRE_RATE); // 4 shots per second
   }, [shootBullet]);
 
