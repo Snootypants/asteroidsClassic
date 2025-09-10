@@ -3,10 +3,12 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MINIMAP_WIDTH, MINIMAP_HEIGHT, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, INITIAL_ASTEROID_COUNT, MAX_BULLETS, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION } from './utils/constants.js';
 import { Camera } from './utils/camera.js';
-import { Minimap } from './components/Minimap.js';
 import './App.css';
+import { useStarfield } from './hooks/useStarfield.js';
+import { useResponsiveLayout } from './hooks/useResponsiveLayout.js';
+import { useRendering } from './hooks/useRendering.js';
 
 function App() {
   const canvasRef = useRef(null);
@@ -22,7 +24,7 @@ function App() {
   const gameStartedRef = useRef(false);
   const requestRef = useRef();
   const lastShotTimeRef = useRef(0);
-  const starsRef = useRef([]);
+  const { starsRef, generateStarfield } = useStarfield();
   const mousePositionRef = useRef({ x: 0, y: 0 });
   const isMouseDownRef = useRef(false);
   // Simplified firing: handled in the main update loop via a single timer
@@ -35,32 +37,21 @@ function App() {
   // Layout state for responsive HUD placement
   const [layout, setLayout] = useState({ minimapBottom: -90 });
 
-  // Generate stars with bell curve distribution
-  const generateStarfield = useCallback(() => {
-    const stars = [];
-    for (let i = 0; i < STAR_COUNT * STAR_FIELD_MULTIPLIER; i++) { // More stars for bigger world
-      // Box-Muller transform for normal distribution
-      const u1 = Math.random();
-      const u2 = Math.random();
-      const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-      
-      // Convert to bell curve centered at 0.5 with std dev of 0.15
-      let brightness = 0.5 + z0 * 0.15;
-      // Clamp to valid range
-      brightness = Math.max(STAR_MIN_BRIGHTNESS, Math.min(STAR_MAX_BRIGHTNESS, brightness));
-      
-      stars.push({
-        x: Math.random() * WORLD_WIDTH * STAR_FIELD_SPREAD, // Spread beyond world boundaries
-        y: Math.random() * WORLD_HEIGHT * STAR_FIELD_SPREAD,
-        brightness: brightness,
-        size: brightness > STAR_LARGE_THRESHOLD ? 2 : brightness > STAR_MEDIUM_THRESHOLD ? 1.5 : 1,
-        parallax: MIN_PARALLAX + Math.random() * (MAX_PARALLAX - MIN_PARALLAX) // Random parallax speed
-      });
-    }
-    starsRef.current = stars;
-  }, []);
+  useResponsiveLayout(canvasRef, minimapCanvasRef, setLayout);
 
-  // Reusable function to initialize asteroids
+  const { render } = useRendering({
+    canvasRef,
+    minimapCanvasRef,
+    starsRef,
+    shipRef,
+    cameraRef,
+    asteroidsRef,
+    bulletsRef,
+    mousePositionRef,
+    gameStartedRef
+  });
+
+    // Reusable function to initialize asteroids
   const initializeAsteroids = useCallback(() => {
     const initialAsteroids = [];
     for (let i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
@@ -149,7 +140,7 @@ function App() {
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('wheel', handleWheel);
     };
-  }, []);
+  }, [shootBullet]);
 
   const startGame = () => {
     gameStartedRef.current = true;
@@ -305,105 +296,6 @@ function App() {
     }
   }, []);
 
-  const renderMinimap = useCallback(() => {
-    const minimapCanvas = minimapCanvasRef.current;
-    if (!minimapCanvas) return;
-    const ctx = minimapCanvas.getContext('2d');
-    Minimap.draw(ctx, shipRef.current, asteroidsRef.current, cameraRef.current);
-  }, []);
-
-  const render = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const canvasWidth = window.currentCanvasWidth || CANVAS_WIDTH;
-    const canvasHeight = window.currentCanvasHeight || CANVAS_HEIGHT;
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-    const camera = cameraRef.current;
-
-    // Draw parallax stars first (background)
-    starsRef.current.forEach((star) => {
-      // Calculate parallax position
-      const parallaxX = star.x - camera.x * star.parallax;
-      const parallaxY = star.y - camera.y * star.parallax;
-      
-      const screenPos = camera.worldToScreen(parallaxX, parallaxY, canvasWidth, canvasHeight);
-      
-      // Only draw if visible (with margin for star wrapping)
-      if (screenPos.x >= -50 && screenPos.x <= canvasWidth + 50 && 
-          screenPos.y >= -50 && screenPos.y <= canvasHeight + 50) {
-        ctx.save();
-        ctx.globalAlpha = star.brightness;
-        ctx.fillStyle = 'white';
-        ctx.fillRect(screenPos.x, screenPos.y, star.size / camera.zoom, star.size / camera.zoom);
-        ctx.restore();
-      }
-    });
-
-    // Draw ship
-    if (shipRef.current && camera.isVisible(shipRef.current.x, shipRef.current.y, 50, canvasWidth, canvasHeight)) {
-      const screenPos = camera.worldToScreen(shipRef.current.x, shipRef.current.y, canvasWidth, canvasHeight);
-      ctx.save();
-      ctx.translate(screenPos.x, screenPos.y);
-      ctx.scale(1/camera.zoom, 1/camera.zoom);
-      ctx.rotate(shipRef.current.angle);
-      // Draw ship triangle
-      const size = shipRef.current.size;
-      ctx.beginPath();
-      ctx.moveTo(size, 0);
-      ctx.lineTo(-size / 2, -size / 2);
-      ctx.lineTo(-size / 2, size / 2);
-      ctx.closePath();
-      ctx.strokeStyle = 'white';
-      ctx.stroke();
-      ctx.restore();
-    }
-    
-    // Draw asteroids (with culling)
-    asteroidsRef.current.forEach((asteroid) => {
-      if (asteroid && camera.isVisible(asteroid.x, asteroid.y, asteroid.size, canvasWidth, canvasHeight)) {
-        const screenPos = camera.worldToScreen(asteroid.x, asteroid.y, canvasWidth, canvasHeight);
-        ctx.save();
-        ctx.translate(screenPos.x, screenPos.y);
-        ctx.scale(1/camera.zoom, 1/camera.zoom);
-        // Draw asteroid using its draw method
-        ctx.translate(-asteroid.x, -asteroid.y);
-        asteroid.draw(ctx);
-        ctx.restore();
-      }
-    });
-    
-    // Draw bullets (with culling)
-    bulletsRef.current.forEach((bullet) => {
-      if (bullet && camera.isVisible(bullet.x, bullet.y, bullet.size, canvasWidth, canvasHeight)) {
-        const screenPos = camera.worldToScreen(bullet.x, bullet.y, canvasWidth, canvasHeight);
-        ctx.beginPath();
-        ctx.arc(screenPos.x, screenPos.y, bullet.size / camera.zoom, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
-        ctx.fill();
-      }
-    });
-
-    // Draw crosshair at mouse position
-    if (gameStartedRef.current) {
-      const mousePos = mousePositionRef.current;
-      const screenPos = camera.worldToScreen(mousePos.x, mousePos.y, canvasWidth, canvasHeight);
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      // Horizontal line
-      ctx.moveTo(screenPos.x - CROSSHAIR_SIZE, screenPos.y);
-      ctx.lineTo(screenPos.x + CROSSHAIR_SIZE, screenPos.y);
-      // Vertical line
-      ctx.moveTo(screenPos.x, screenPos.y - CROSSHAIR_SIZE);
-      ctx.lineTo(screenPos.x, screenPos.y + CROSSHAIR_SIZE);
-      ctx.stroke();
-    }
-
-    // Render minimap separately
-    renderMinimap();
-  }, [renderMinimap]);
 
 
   useEffect(() => {
@@ -439,120 +331,6 @@ function App() {
     };
   }, [update, render]);
 
-  // Dynamic layout system with fixed margins and locked aspect ratio
-  useEffect(() => {
-    const updateGameLayout = () => {
-      // Fixed margins
-      const MARGIN_LEFT = 100;
-      const MARGIN_RIGHT = 100;
-      const MARGIN_TOP = 100;
-      const MARGIN_BOTTOM = 200;
-      
-      // Target aspect ratio 1349:817
-      const ASPECT_RATIO = 1349 / 817; // ≈1.6514041591
-      
-      // Minimap sizing: width is a proportion of the play area,
-      // height derived from the WORLD aspect ratio so the shape matches the world.
-      const MINIMAP_WIDTH_RATIO = 0.3276501112; // keep visual width similar to before
-      
-      // Calculate available box
-      const availableWidth = window.innerWidth - MARGIN_LEFT - MARGIN_RIGHT;
-      const availableHeight = window.innerHeight - MARGIN_TOP - MARGIN_BOTTOM;
-      
-      // Calculate play area size maintaining aspect ratio
-      let playWidth, playHeight;
-      if (availableWidth / availableHeight > ASPECT_RATIO) {
-        // Height-constrained
-        playHeight = availableHeight;
-        playWidth = Math.round(playHeight * ASPECT_RATIO);
-      } else {
-        // Width-constrained
-        playWidth = availableWidth;
-        playHeight = Math.round(playWidth / ASPECT_RATIO);
-      }
-      
-      // Center play area within available box
-      const playX = MARGIN_LEFT + Math.round((availableWidth - playWidth) / 2);
-      const playY = MARGIN_TOP + Math.round((availableHeight - playHeight) / 2);
-      
-      // Calculate minimap dimensions using world aspect ratio
-      const worldAspect = WORLD_HEIGHT / WORLD_WIDTH; // H/W
-      let minimapWidth = Math.round(playWidth * MINIMAP_WIDTH_RATIO);
-      let minimapHeight = Math.round(minimapWidth * worldAspect);
-      // Guard: if height would exceed a reasonable portion of play area, cap by height and recompute width
-      const MAX_MINIMAP_HEIGHT_RATIO = 0.2; // at most 20% of play height
-      const maxMinimapHeight = Math.round(playHeight * MAX_MINIMAP_HEIGHT_RATIO);
-      if (minimapHeight > maxMinimapHeight) {
-        minimapHeight = maxMinimapHeight;
-        minimapWidth = Math.round(minimapHeight / worldAspect);
-      }
-      
-      // Apply styles to play area
-      const playArea = document.querySelector('.play-area');
-      if (playArea) {
-        playArea.style.left = `${playX}px`;
-        playArea.style.top = `${playY}px`;
-        playArea.style.width = `${playWidth}px`;
-        playArea.style.height = `${playHeight}px`;
-      }
-      
-      // Update canvas dimensions
-      const canvas = canvasRef.current;
-      if (canvas) {
-        canvas.width = playWidth - 4; // Account for 2px border on each side
-        canvas.height = playHeight - 4;
-      }
-      
-      // Update minimap dimensions and ensure it's positioned within play area
-      const minimapCanvas = minimapCanvasRef.current;
-      if (minimapCanvas) {
-        minimapCanvas.width = minimapWidth;
-        minimapCanvas.height = minimapHeight;
-        minimapCanvas.style.width = `${minimapWidth}px`;
-        minimapCanvas.style.height = `${minimapHeight}px`;
-        console.log('Minimap dimensions set:', minimapWidth, minimapHeight);
-      }
-
-      // Keep minimap and stats vertically aligned regardless of window size
-      const minimapBottom = -Math.round(minimapHeight * 0.75); // show top 1/4 overlapping play area
-      setLayout(prev => ({ ...prev, minimapBottom }));
-      
-      // Update constants to match current canvas size for proper rendering
-      const updatedCanvasWidth = playWidth - 4;
-      const updatedCanvasHeight = playHeight - 4;
-      
-      // Store current canvas dimensions for use in rendering
-      window.currentCanvasWidth = updatedCanvasWidth;
-      window.currentCanvasHeight = updatedCanvasHeight;
-      
-      // Debug logging
-      console.log('Layout calc:', {
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        availableWidth,
-        availableHeight,
-        playWidth,
-        playHeight,
-        playX,
-        playY,
-        minimapWidth,
-        minimapHeight
-      });
-    };
-
-    // Initial layout calculation with a small delay to ensure DOM is ready
-    const timeoutId = setTimeout(updateGameLayout, 10);
-    updateGameLayout();
-    
-    window.addEventListener('resize', updateGameLayout);
-    window.addEventListener('orientationchange', updateGameLayout);
-    
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', updateGameLayout);
-      window.removeEventListener('orientationchange', updateGameLayout);
-    };
-  }, []);
 
   return (
     <div className="app">
