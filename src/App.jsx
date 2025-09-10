@@ -32,8 +32,12 @@ function App() {
     gameOver: false,
     gameStarted: false
   });
-  // Layout state for responsive HUD placement
-  const [layout, setLayout] = useState({ minimapBottom: -90 });
+  // Layout state for responsive HUD placement and canvas sizing
+  const [layout, setLayout] = useState({
+    minimapBottom: -90,
+    canvasWidth: CANVAS_WIDTH,
+    canvasHeight: CANVAS_HEIGHT
+  });
 
   // Generate stars with bell curve distribution
   const generateStarfield = useCallback(() => {
@@ -496,13 +500,6 @@ function App() {
         playArea.style.height = `${playHeight}px`;
       }
       
-      // Update canvas dimensions
-      const canvas = canvasRef.current;
-      if (canvas) {
-        canvas.width = playWidth - 4; // Account for 2px border on each side
-        canvas.height = playHeight - 4;
-      }
-      
       // Update minimap dimensions and ensure it's positioned within play area
       const minimapCanvas = minimapCanvasRef.current;
       if (minimapCanvas) {
@@ -515,15 +512,29 @@ function App() {
 
       // Keep minimap and stats vertically aligned regardless of window size
       const minimapBottom = -Math.round(minimapHeight * 0.75); // show top 1/4 overlapping play area
-      setLayout(prev => ({ ...prev, minimapBottom }));
-      
+
       // Update constants to match current canvas size for proper rendering
       const updatedCanvasWidth = playWidth - 4;
       const updatedCanvasHeight = playHeight - 4;
-      
+
+      // Update canvas dimensions
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.width = updatedCanvasWidth;
+        canvas.height = updatedCanvasHeight;
+      }
+
       // Store current canvas dimensions for use in rendering
       window.currentCanvasWidth = updatedCanvasWidth;
       window.currentCanvasHeight = updatedCanvasHeight;
+
+      // Sync layout state with calculated positions and sizes
+      setLayout(prev => ({
+        ...prev,
+        minimapBottom,
+        canvasWidth: updatedCanvasWidth,
+        canvasHeight: updatedCanvasHeight
+      }));
       
       // Debug logging
       console.log('Layout calc:', {
@@ -557,10 +568,10 @@ function App() {
   return (
     <div className="app">
       <div className="play-area">
-        <canvas 
-          ref={canvasRef} 
-          width={1200} 
-          height={900} 
+        <canvas
+          ref={canvasRef}
+          width={layout.canvasWidth}
+          height={layout.canvasHeight}
           onClick={handleCanvasClick}
           className="game-canvas"
         />
