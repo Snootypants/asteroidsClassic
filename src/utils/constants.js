@@ -45,10 +45,6 @@ export const ZOOM_SPEED = 0.1;
 // Bullet range (twice viewport width)
 export const BULLET_RANGE = VIEWPORT_WIDTH * 2;
 
-// Minimap
-export const MINIMAP_WIDTH = 160;
-export const MINIMAP_HEIGHT = 120;
-
 // Ship physics constants
 export const SHIP_FRICTION = 0.99;
 export const SHIP_DECELERATION = 0.92;
