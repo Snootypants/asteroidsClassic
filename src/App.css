@@ -36,6 +36,8 @@ canvas.pointer-locked {
   font-size: 20px;
   font-weight: bold;
   min-width: 120px;
+  position: absolute;
+  left: 320px; /* Center between canvas left edge (10px) and minimap right edge (630px): (10+630)/2 = 320px */
 }
 
 .ui-center {
@@ -43,6 +45,7 @@ canvas.pointer-locked {
   flex-direction: column;
   align-items: center;
   gap: 10px;
+  margin-top: -30px; /* Move minimap up so 1/4 is inside play area */
 }
 
 .ui-right {

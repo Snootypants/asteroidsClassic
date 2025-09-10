@@ -3,7 +3,7 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MAX_ZOOM_OUT, MIN_ZOOM } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MAX_ZOOM_OUT, MIN_ZOOM, MINIMAP_WIDTH, MINIMAP_HEIGHT } from './utils/constants.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import './App.css';
@@ -38,20 +38,20 @@ function App() {
     isPointerLocked: false
   });
 
-  // Initialize asteroids and stars
-  useEffect(() => {
-    const initialAsteroids = [];
-    for (let i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
-      const x = Math.random() * WORLD_WIDTH;
-      const y = Math.random() * WORLD_HEIGHT;
-      initialAsteroids.push(new Asteroid(x, y));
-    }
-    asteroidsRef.current = initialAsteroids;
-
-    // Generate stars for parallax (distributed across larger area)
+  // Generate stars with bell curve distribution
+  const generateStarfield = useCallback(() => {
     const stars = [];
     for (let i = 0; i < STAR_COUNT * 3; i++) { // More stars for bigger world
-      const brightness = STAR_MIN_BRIGHTNESS + Math.random() * (STAR_MAX_BRIGHTNESS - STAR_MIN_BRIGHTNESS);
+      // Box-Muller transform for normal distribution
+      const u1 = Math.random();
+      const u2 = Math.random();
+      const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+      
+      // Convert to bell curve centered at 0.5 with std dev of 0.15
+      let brightness = 0.5 + z0 * 0.15;
+      // Clamp to valid range
+      brightness = Math.max(STAR_MIN_BRIGHTNESS, Math.min(STAR_MAX_BRIGHTNESS, brightness));
+      
       stars.push({
         x: Math.random() * WORLD_WIDTH * 1.5, // Spread beyond world boundaries
         y: Math.random() * WORLD_HEIGHT * 1.5,
@@ -62,6 +62,20 @@ function App() {
     }
     starsRef.current = stars;
   }, []);
+
+  // Initialize asteroids and stars
+  useEffect(() => {
+    const initialAsteroids = [];
+    for (let i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
+      const x = Math.random() * WORLD_WIDTH;
+      const y = Math.random() * WORLD_HEIGHT;
+      initialAsteroids.push(new Asteroid(x, y));
+    }
+    asteroidsRef.current = initialAsteroids;
+
+    // Generate initial starfield
+    generateStarfield();
+  }, [generateStarfield]);
 
   // Handle pointer lock and mouse/keyboard input
   useEffect(() => {
@@ -197,11 +211,14 @@ function App() {
       initialAsteroids.push(new Asteroid(x, y));
     }
     asteroidsRef.current = initialAsteroids;
+    
+    // Regenerate starfield for new game
+    generateStarfield();
   };
 
   const shootBullet = useCallback(() => {
     const ship = shipRef.current;
-    if (ship && gameStartedRef.current && !gameOverRef.current) {
+    if (ship && gameStartedRef.current && !gameOverRef.current && bulletsRef.current.length < MAX_BULLETS) {
       bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
     }
   }, []);
@@ -282,7 +299,7 @@ function App() {
     bulletsRef.current = bulletsRef.current.filter((bullet) => !bullet.isExpired());
 
     // Shooting with rate limiting
-    if (keys.Space && bulletsRef.current.length < 5) {
+    if (keys.Space && bulletsRef.current.length < MAX_BULLETS) {
       const currentTime = Date.now();
       if (currentTime - lastShotTimeRef.current >= BULLET_FIRE_RATE) {
         bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
@@ -484,7 +501,6 @@ function App() {
           {uiState.gameOver && <div className="game-over">Game Over</div>}
         </div>
         <div className="ui-center">
-          <div className="minimap-label">minimap</div>
           <canvas 
             ref={minimapCanvasRef}
             width={MINIMAP_WIDTH}
