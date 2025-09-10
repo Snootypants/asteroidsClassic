@@ -25,8 +25,7 @@ function App() {
   const starsRef = useRef([]);
   const mousePositionRef = useRef({ x: 0, y: 0 });
   const isMouseDownRef = useRef(false);
-  const continuousShootingRef = useRef(null);
-  const continuousShootingTimeoutRef = useRef(null);
+  // Simplified firing: handled in the main update loop via a single timer
   const [uiState, setUiState] = useState({
     score: 0,
     lives: INITIAL_LIVES,
@@ -117,28 +116,14 @@ function App() {
     const handleMouseDown = (e) => {
       if (e.button === 0 && gameStartedRef.current && !gameOverRef.current) {
         isMouseDownRef.current = true;
-        // Immediate shot on click - no bullet limit
+        // fire immediately; update loop will handle steady cadence
         shootBullet(true);
-        // Start continuous shooting after a delay
-        const timeoutId = setTimeout(() => {
-          if (isMouseDownRef.current) {
-            startContinuousShooting();
-          }
-        }, CONTINUOUS_FIRE_RATE);
-        // Store timeout ID for cleanup
-        continuousShootingTimeoutRef.current = timeoutId;
       }
     };
 
     const handleMouseUp = (e) => {
       if (e.button === 0) {
         isMouseDownRef.current = false;
-        // Clear the timeout to prevent continuous shooting from starting
-        if (continuousShootingTimeoutRef.current) {
-          clearTimeout(continuousShootingTimeoutRef.current);
-          continuousShootingTimeoutRef.current = null;
-        }
-        stopContinuousShooting();
       }
     };
 
@@ -163,10 +148,6 @@ function App() {
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('wheel', handleWheel);
-      stopContinuousShooting();
-      if (continuousShootingTimeoutRef.current) {
-        clearTimeout(continuousShootingTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -209,19 +190,7 @@ function App() {
     }
   }, []);
 
-  const startContinuousShooting = useCallback(() => {
-    if (continuousShootingRef.current) return;
-    continuousShootingRef.current = setInterval(() => {
-      shootBullet(false); // Apply bullet limit for continuous shooting
-    }, CONTINUOUS_FIRE_RATE); // 4 shots per second
-  }, [shootBullet]);
-
-  const stopContinuousShooting = useCallback(() => {
-    if (continuousShootingRef.current) {
-      clearInterval(continuousShootingRef.current);
-      continuousShootingRef.current = null;
-    }
-  }, []);
+  // Removed interval-based continuous shooting; handled in update()
 
   const handleCanvasClick = () => {
     if (!uiState.gameStarted) {
@@ -284,13 +253,12 @@ function App() {
     });
     bulletsRef.current = bulletsRef.current.filter((bullet) => !bullet.isExpired());
 
-    // Shooting with rate limiting
-    if (keys.Space && bulletsRef.current.length < MAX_BULLETS) {
-      const currentTime = Date.now();
-      if (currentTime - lastShotTimeRef.current >= BULLET_FIRE_RATE) {
-        bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
-        lastShotTimeRef.current = currentTime;
-      }
+    // Unified, smooth firing cadence for Space or LMB hold
+    const currentTime = Date.now();
+    const isFiring = keys.Space || isMouseDownRef.current;
+    if (isFiring && currentTime - lastShotTimeRef.current >= BULLET_FIRE_RATE) {
+      bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
+      lastShotTimeRef.current = currentTime;
     }
 
     // Collisions

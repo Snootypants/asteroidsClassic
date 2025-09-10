@@ -2,9 +2,11 @@
 export const CANVAS_WIDTH = 1200;
 export const CANVAS_HEIGHT = 900;
 export const SHIP_SIZE = 10;
-export const SHIP_SPEED = 0.2;
-export const BULLET_FIRE_RATE = 333; // milliseconds between shots (3 shots per second)
-export const BULLET_SPEED = 6.7;
+export const SHIP_SPEED = 0.12; // reduced for lower max ship speed
+// One place to configure firing cadence (also used for hold fire)
+export const FIRE_RATE_MS = 250; // 4 shots per second
+export const BULLET_FIRE_RATE = FIRE_RATE_MS; // backwards compatibility
+export const BULLET_SPEED = 18; // faster bullets
 export const BULLET_LIFETIME = 100; // frames
 export const ASTEROID_SPEED = 2;
 export const ASTEROID_SIZE_LARGE = 40;
@@ -17,7 +19,7 @@ export const STAR_MAX_BRIGHTNESS = 1.0;
 // Game configuration constants
 export const INITIAL_ASTEROID_COUNT = 5;
 export const MAX_BULLETS = 5;
-export const CONTINUOUS_FIRE_RATE = 250; // milliseconds (4 shots per second)
+export const CONTINUOUS_FIRE_RATE = FIRE_RATE_MS; // keep in sync with single source of truth
 export const CROSSHAIR_SIZE = 10;
 export const MOUSE_OFFSET = 50;
 export const SCORE_PER_ASTEROID = 10;
