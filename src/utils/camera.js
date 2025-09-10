@@ -1,9 +1,9 @@
 import { WORLD_WIDTH, WORLD_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from './constants.js';
 
 export class Camera {
-  constructor() {
-    this.x = 0;
-    this.y = 0;
+  constructor(x = WORLD_WIDTH / 2, y = WORLD_HEIGHT / 2) {
+    this.x = x;
+    this.y = y;
     this.zoom = 1;
     this.targetZoom = 1;
   }

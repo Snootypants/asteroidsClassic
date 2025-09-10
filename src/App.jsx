@@ -452,7 +452,7 @@ function App() {
         cancelAnimationFrame(requestRef.current);
       }
     };
-  }, []);
+  }, [update, render]);
 
   return (
     <div className="app">
