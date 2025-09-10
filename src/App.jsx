@@ -24,19 +24,17 @@ function App() {
   const lastShotTimeRef = useRef(0);
   const starsRef = useRef([]);
   const mousePositionRef = useRef({ x: 0, y: 0 });
-  const isPointerLockedRef = useRef(false);
   const isMouseDownRef = useRef(false);
   const continuousShootingRef = useRef(null);
   const continuousShootingTimeoutRef = useRef(null);
-  const isPausedRef = useRef(false);
   const [uiState, setUiState] = useState({
     score: 0,
     lives: INITIAL_LIVES,
     gameOver: false,
-    gameStarted: false,
-    isPaused: false,
-    isPointerLocked: false
+    gameStarted: false
   });
+  // Layout state for responsive HUD placement
+  const [layout, setLayout] = useState({ minimapBottom: -90 });
 
   // Generate stars with bell curve distribution
   const generateStarfield = useCallback(() => {
@@ -89,11 +87,6 @@ function App() {
         e.preventDefault();
       }
       
-      // ESC key pauses and releases pointer lock
-      if (e.code === 'Escape') {
-        document.exitPointerLock();
-        return;
-      }
       
       keysRef.current[e.code] = true;
     };
@@ -102,34 +95,27 @@ function App() {
       keysRef.current[e.code] = false;
     };
 
-    const handlePointerLockChange = () => {
-      const isLocked = document.pointerLockElement === canvasRef.current;
-      isPointerLockedRef.current = isLocked;
-      const paused = !isLocked && gameStartedRef.current;
-      isPausedRef.current = paused;
-      setUiState((prev) => ({ 
-        ...prev, 
-        isPaused: paused,
-        isPointerLocked: isLocked
-      }));
-    };
 
     const handleMouseMove = (e) => {
-      if (isPointerLockedRef.current && canvasRef.current) {
+      if (canvasRef.current && gameStartedRef.current) {
+        const canvas = canvasRef.current;
+        const rect = canvas.getBoundingClientRect();
         const camera = cameraRef.current;
-        const sensitivity = camera.zoom; // Movement scales with zoom
         
-        mousePositionRef.current.x += e.movementX * sensitivity;
-        mousePositionRef.current.y += e.movementY * sensitivity;
+        // Get mouse position relative to canvas
+        const canvasX = e.clientX - rect.left;
+        const canvasY = e.clientY - rect.top;
         
-        // Keep mouse position within world bounds
-        mousePositionRef.current.x = Math.max(0, Math.min(WORLD_WIDTH, mousePositionRef.current.x));
-        mousePositionRef.current.y = Math.max(0, Math.min(WORLD_HEIGHT, mousePositionRef.current.y));
+        // Convert canvas coordinates to world coordinates
+        const worldPos = camera.screenToWorld(canvasX, canvasY, canvas.width, canvas.height);
+        
+        mousePositionRef.current.x = worldPos.x;
+        mousePositionRef.current.y = worldPos.y;
       }
     };
 
     const handleMouseDown = (e) => {
-      if (e.button === 0 && isPointerLockedRef.current && gameStartedRef.current && !gameOverRef.current) {
+      if (e.button === 0 && gameStartedRef.current && !gameOverRef.current) {
         isMouseDownRef.current = true;
         // Immediate shot on click - no bullet limit
         shootBullet(true);
@@ -165,7 +151,6 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    document.addEventListener('pointerlockchange', handlePointerLockChange);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mouseup', handleMouseUp);
@@ -174,7 +159,6 @@ function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      document.removeEventListener('pointerlockchange', handlePointerLockChange);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mouseup', handleMouseUp);
@@ -188,7 +172,7 @@ function App() {
 
   const startGame = () => {
     gameStartedRef.current = true;
-    setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false, isPaused: false }));
+    setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false }));
     scoreRef.current = 0;
     livesRef.current = INITIAL_LIVES;
     gameOverRef.current = false;
@@ -242,13 +226,11 @@ function App() {
   const handleCanvasClick = () => {
     if (!uiState.gameStarted) {
       startGame();
-    } else if (canvasRef.current) {
-      canvasRef.current.requestPointerLock();
     }
   };
 
   const update = useCallback(() => {
-    if (gameOverRef.current || !gameStartedRef.current || isPausedRef.current) return;
+    if (gameOverRef.current || !gameStartedRef.current) return;
 
     // Update camera zoom
     const camera = cameraRef.current;
@@ -285,7 +267,9 @@ function App() {
     wrapPosition(ship); // World wrapping
 
     // Update camera to follow ship
-    camera.followShip(ship.x, ship.y);
+    const canvasWidth = window.currentCanvasWidth || CANVAS_WIDTH;
+    const canvasHeight = window.currentCanvasHeight || CANVAS_HEIGHT;
+    camera.followShip(ship.x, ship.y, canvasWidth, canvasHeight);
 
     // Update asteroids
     asteroidsRef.current.forEach((asteroid) => {
@@ -364,7 +348,9 @@ function App() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    const canvasWidth = window.currentCanvasWidth || CANVAS_WIDTH;
+    const canvasHeight = window.currentCanvasHeight || CANVAS_HEIGHT;
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
     const camera = cameraRef.current;
 
@@ -374,11 +360,11 @@ function App() {
       const parallaxX = star.x - camera.x * star.parallax;
       const parallaxY = star.y - camera.y * star.parallax;
       
-      const screenPos = camera.worldToScreen(parallaxX, parallaxY);
+      const screenPos = camera.worldToScreen(parallaxX, parallaxY, canvasWidth, canvasHeight);
       
       // Only draw if visible (with margin for star wrapping)
-      if (screenPos.x >= -50 && screenPos.x <= CANVAS_WIDTH + 50 && 
-          screenPos.y >= -50 && screenPos.y <= CANVAS_HEIGHT + 50) {
+      if (screenPos.x >= -50 && screenPos.x <= canvasWidth + 50 && 
+          screenPos.y >= -50 && screenPos.y <= canvasHeight + 50) {
         ctx.save();
         ctx.globalAlpha = star.brightness;
         ctx.fillStyle = 'white';
@@ -388,8 +374,8 @@ function App() {
     });
 
     // Draw ship
-    if (shipRef.current && camera.isVisible(shipRef.current.x, shipRef.current.y)) {
-      const screenPos = camera.worldToScreen(shipRef.current.x, shipRef.current.y);
+    if (shipRef.current && camera.isVisible(shipRef.current.x, shipRef.current.y, 50, canvasWidth, canvasHeight)) {
+      const screenPos = camera.worldToScreen(shipRef.current.x, shipRef.current.y, canvasWidth, canvasHeight);
       ctx.save();
       ctx.translate(screenPos.x, screenPos.y);
       ctx.scale(1/camera.zoom, 1/camera.zoom);
@@ -408,8 +394,8 @@ function App() {
     
     // Draw asteroids (with culling)
     asteroidsRef.current.forEach((asteroid) => {
-      if (asteroid && camera.isVisible(asteroid.x, asteroid.y, asteroid.size)) {
-        const screenPos = camera.worldToScreen(asteroid.x, asteroid.y);
+      if (asteroid && camera.isVisible(asteroid.x, asteroid.y, asteroid.size, canvasWidth, canvasHeight)) {
+        const screenPos = camera.worldToScreen(asteroid.x, asteroid.y, canvasWidth, canvasHeight);
         ctx.save();
         ctx.translate(screenPos.x, screenPos.y);
         ctx.scale(1/camera.zoom, 1/camera.zoom);
@@ -422,8 +408,8 @@ function App() {
     
     // Draw bullets (with culling)
     bulletsRef.current.forEach((bullet) => {
-      if (bullet && camera.isVisible(bullet.x, bullet.y, bullet.size)) {
-        const screenPos = camera.worldToScreen(bullet.x, bullet.y);
+      if (bullet && camera.isVisible(bullet.x, bullet.y, bullet.size, canvasWidth, canvasHeight)) {
+        const screenPos = camera.worldToScreen(bullet.x, bullet.y, canvasWidth, canvasHeight);
         ctx.beginPath();
         ctx.arc(screenPos.x, screenPos.y, bullet.size / camera.zoom, 0, Math.PI * 2);
         ctx.fillStyle = 'white';
@@ -431,10 +417,10 @@ function App() {
       }
     });
 
-    // Draw crosshair at mouse position when pointer is locked
-    if (isPointerLockedRef.current && gameStartedRef.current && !uiState.isPaused) {
+    // Draw crosshair at mouse position
+    if (gameStartedRef.current) {
       const mousePos = mousePositionRef.current;
-      const screenPos = camera.worldToScreen(mousePos.x, mousePos.y);
+      const screenPos = camera.worldToScreen(mousePos.x, mousePos.y, canvasWidth, canvasHeight);
       ctx.strokeStyle = 'white';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -485,46 +471,130 @@ function App() {
     };
   }, [update, render]);
 
-  // Responsive scaling
+  // Dynamic layout system with fixed margins and locked aspect ratio
   useEffect(() => {
-    const updateGameScale = () => {
-      const container = document.querySelector('.game-container');
-      if (!container) return;
-
-      // Total game area: canvas (1200x900) + minimap extension (90px) + bottom UI (~130px)
-      const totalWidth = 1200;
-      const totalHeight = 900 + 90 + 130; // Canvas + minimap extension + bottom UI
+    const updateGameLayout = () => {
+      // Fixed margins
+      const MARGIN_LEFT = 100;
+      const MARGIN_RIGHT = 100;
+      const MARGIN_TOP = 100;
+      const MARGIN_BOTTOM = 200;
       
-      const scaleX = (window.innerWidth - 40) / totalWidth; // 40px for margins
-      const scaleY = (window.innerHeight - 40) / totalHeight;
-      const scale = Math.min(scaleX, scaleY, 1); // Don't scale above 100%
+      // Target aspect ratio 1349:817
+      const ASPECT_RATIO = 1349 / 817; // ≈1.6514041591
       
-      container.style.transform = `scale(${scale})`;
-      container.style.transformOrigin = 'center center';
+      // Minimap sizing: width is a proportion of the play area,
+      // height derived from the WORLD aspect ratio so the shape matches the world.
+      const MINIMAP_WIDTH_RATIO = 0.3276501112; // keep visual width similar to before
       
-      // Adjust parent container to account for scaled size
-      const gameArea = container.parentElement;
-      if (gameArea) {
-        gameArea.style.width = `${totalWidth * scale}px`;
-        gameArea.style.height = `${totalHeight * scale}px`;
+      // Calculate available box
+      const availableWidth = window.innerWidth - MARGIN_LEFT - MARGIN_RIGHT;
+      const availableHeight = window.innerHeight - MARGIN_TOP - MARGIN_BOTTOM;
+      
+      // Calculate play area size maintaining aspect ratio
+      let playWidth, playHeight;
+      if (availableWidth / availableHeight > ASPECT_RATIO) {
+        // Height-constrained
+        playHeight = availableHeight;
+        playWidth = Math.round(playHeight * ASPECT_RATIO);
+      } else {
+        // Width-constrained
+        playWidth = availableWidth;
+        playHeight = Math.round(playWidth / ASPECT_RATIO);
       }
+      
+      // Center play area within available box
+      const playX = MARGIN_LEFT + Math.round((availableWidth - playWidth) / 2);
+      const playY = MARGIN_TOP + Math.round((availableHeight - playHeight) / 2);
+      
+      // Calculate minimap dimensions using world aspect ratio
+      const worldAspect = WORLD_HEIGHT / WORLD_WIDTH; // H/W
+      let minimapWidth = Math.round(playWidth * MINIMAP_WIDTH_RATIO);
+      let minimapHeight = Math.round(minimapWidth * worldAspect);
+      // Guard: if height would exceed a reasonable portion of play area, cap by height and recompute width
+      const MAX_MINIMAP_HEIGHT_RATIO = 0.2; // at most 20% of play height
+      const maxMinimapHeight = Math.round(playHeight * MAX_MINIMAP_HEIGHT_RATIO);
+      if (minimapHeight > maxMinimapHeight) {
+        minimapHeight = maxMinimapHeight;
+        minimapWidth = Math.round(minimapHeight / worldAspect);
+      }
+      
+      // Apply styles to play area
+      const playArea = document.querySelector('.play-area');
+      if (playArea) {
+        playArea.style.left = `${playX}px`;
+        playArea.style.top = `${playY}px`;
+        playArea.style.width = `${playWidth}px`;
+        playArea.style.height = `${playHeight}px`;
+      }
+      
+      // Update canvas dimensions
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.width = playWidth - 4; // Account for 2px border on each side
+        canvas.height = playHeight - 4;
+      }
+      
+      // Update minimap dimensions and ensure it's positioned within play area
+      const minimapCanvas = minimapCanvasRef.current;
+      if (minimapCanvas) {
+        minimapCanvas.width = minimapWidth;
+        minimapCanvas.height = minimapHeight;
+        minimapCanvas.style.width = `${minimapWidth}px`;
+        minimapCanvas.style.height = `${minimapHeight}px`;
+        console.log('Minimap dimensions set:', minimapWidth, minimapHeight);
+      }
+
+      // Keep minimap and stats vertically aligned regardless of window size
+      const minimapBottom = -Math.round(minimapHeight * 0.75); // show top 1/4 overlapping play area
+      setLayout(prev => ({ ...prev, minimapBottom }));
+      
+      // Update constants to match current canvas size for proper rendering
+      const updatedCanvasWidth = playWidth - 4;
+      const updatedCanvasHeight = playHeight - 4;
+      
+      // Store current canvas dimensions for use in rendering
+      window.currentCanvasWidth = updatedCanvasWidth;
+      window.currentCanvasHeight = updatedCanvasHeight;
+      
+      // Debug logging
+      console.log('Layout calc:', {
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+        availableWidth,
+        availableHeight,
+        playWidth,
+        playHeight,
+        playX,
+        playY,
+        minimapWidth,
+        minimapHeight
+      });
     };
 
-    updateGameScale();
-    window.addEventListener('resize', updateGameScale);
+    // Initial layout calculation with a small delay to ensure DOM is ready
+    const timeoutId = setTimeout(updateGameLayout, 10);
+    updateGameLayout();
     
-    return () => window.removeEventListener('resize', updateGameScale);
+    window.addEventListener('resize', updateGameLayout);
+    window.addEventListener('orientationchange', updateGameLayout);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', updateGameLayout);
+      window.removeEventListener('orientationchange', updateGameLayout);
+    };
   }, []);
 
   return (
     <div className="app">
-      <div className="game-container">
+      <div className="play-area">
         <canvas 
           ref={canvasRef} 
-          width={CANVAS_WIDTH} 
-          height={CANVAS_HEIGHT} 
+          width={1200} 
+          height={900} 
           onClick={handleCanvasClick}
-          className={`${uiState.isPaused ? 'paused' : ''} ${uiState.isPointerLocked ? 'pointer-locked' : ''}`.trim()}
+          className="game-canvas"
         />
         {!uiState.gameStarted && (
           <div className="title-overlay">
@@ -532,26 +602,32 @@ function App() {
             <div className="start-instruction">Click to start</div>
           </div>
         )}
-        {uiState.isPaused && uiState.gameStarted && (
-          <div className="pause-overlay">
-            <div className="pause-text">PAUSED</div>
-            <div className="pause-instruction">Click to resume</div>
-          </div>
-        )}
         <canvas 
           ref={minimapCanvasRef}
-          width={MINIMAP_WIDTH}
-          height={MINIMAP_HEIGHT}
           className="minimap-canvas"
+          style={{ bottom: `${layout.minimapBottom}px` }}
         />
-      </div>
-      <div className="bottom-ui">
-        <div className="ui-left">
+        
+        {/* Score/Lives positioned under play area, left of minimap */}
+        <div style={{
+          position: 'absolute',
+          bottom: `${layout.minimapBottom}px`, // track minimap position
+          left: '0',       // anchor to left edge of play area
+          transform: 'none',
+          paddingLeft: '24px',
+          display: 'flex',
+          gap: '32px',
+          fontSize: '20px',
+          fontWeight: 'bold',
+          color: 'white'
+        }}>
           <div>Score: {uiState.score}</div>
           <div>Lives: {uiState.lives}</div>
-          {uiState.gameOver && <div className="game-over">Game Over</div>}
         </div>
-        <div className="ui-right">
+      </div>
+      <div className="hud-container">
+        <div className="hud-right">
+          {uiState.gameOver && <div className="game-over">Game Over</div>}
           {uiState.gameStarted && uiState.gameOver && (
             <button onClick={startGame} className="game-button">New Game</button>
           )}
@@ -562,4 +638,3 @@ function App() {
 }
 
 export default App;
-

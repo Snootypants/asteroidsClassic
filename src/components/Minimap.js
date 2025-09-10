@@ -1,40 +1,35 @@
-import { WORLD_WIDTH, WORLD_HEIGHT, MINIMAP_WIDTH, MINIMAP_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../utils/constants.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../utils/constants.js';
 
 export class Minimap {
   static draw(ctx, ship, asteroids, camera) {
-    // Clear the minimap canvas
-    ctx.clearRect(0, 0, MINIMAP_WIDTH, MINIMAP_HEIGHT);
-    
-    // Full canvas is the minimap
-    const mapX = 0;
-    const mapY = 0;
-    
-    // Draw minimap background
+    // Use the actual canvas dimensions so resizing stays correct
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
+
+    // Clear and draw background (border is handled by CSS on the canvas)
+    ctx.clearRect(0, 0, w, h);
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 2;
-    ctx.fillRect(mapX, mapY, MINIMAP_WIDTH, MINIMAP_HEIGHT);
-    ctx.strokeRect(mapX, mapY, MINIMAP_WIDTH, MINIMAP_HEIGHT);
-    
+    ctx.fillRect(0, 0, w, h);
+
     // Scale factors
-    const scaleX = MINIMAP_WIDTH / WORLD_WIDTH;
-    const scaleY = MINIMAP_HEIGHT / WORLD_HEIGHT;
+    const scaleX = w / WORLD_WIDTH;
+    const scaleY = h / WORLD_HEIGHT;
     
     // Draw asteroids as small gray dots
     ctx.fillStyle = 'gray';
     asteroids.forEach(asteroid => {
       if (asteroid) {
-        const x = mapX + asteroid.x * scaleX;
-        const y = mapY + asteroid.y * scaleY;
+        const x = asteroid.x * scaleX;
+        const y = asteroid.y * scaleY;
         ctx.fillRect(x - 1, y - 1, 2, 2);
       }
     });
     
     // Draw ship as white dot
     if (ship) {
-      const shipX = mapX + ship.x * scaleX;
-      const shipY = mapY + ship.y * scaleY;
+      const shipX = ship.x * scaleX;
+      const shipY = ship.y * scaleY;
       ctx.fillStyle = 'white';
       ctx.fillRect(shipX - 1.5, shipY - 1.5, 3, 3);
       
@@ -53,8 +48,8 @@ export class Minimap {
     const effectiveViewportWidth = camera.zoom * VIEWPORT_WIDTH;
     const effectiveViewportHeight = camera.zoom * VIEWPORT_HEIGHT;
     
-    const viewX = mapX + (camera.x - effectiveViewportWidth / 2) * scaleX;
-    const viewY = mapY + (camera.y - effectiveViewportHeight / 2) * scaleY;
+    const viewX = (camera.x - effectiveViewportWidth / 2) * scaleX;
+    const viewY = (camera.y - effectiveViewportHeight / 2) * scaleY;
     const viewW = effectiveViewportWidth * scaleX;
     const viewH = effectiveViewportHeight * scaleY;
     

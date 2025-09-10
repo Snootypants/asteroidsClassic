@@ -10,7 +10,7 @@ export const ASTEROID_SPEED = 2;
 export const ASTEROID_SIZE_LARGE = 40;
 export const ASTEROID_SIZE_MEDIUM = 20;
 export const ASTEROID_SIZE_SMALL = 10;
-export const STAR_COUNT = 450; // Increased by 150% from 180
+export const STAR_COUNT = 2000; // Increased star density
 export const STAR_MIN_BRIGHTNESS = 0.2;
 export const STAR_MAX_BRIGHTNESS = 1.0;
 
@@ -29,10 +29,11 @@ export const STAR_LARGE_THRESHOLD = 0.7;
 export const STAR_MEDIUM_THRESHOLD = 0.4;
 
 // Phase 2: Big Map constants
-export const WORLD_WIDTH = 4000; // Fixed world size - 5x original 800px viewport
-export const WORLD_HEIGHT = 3000; // Fixed world size - 5x original 600px viewport
+// Large world; shape is authoritative for the minimap
 export const VIEWPORT_WIDTH = CANVAS_WIDTH;
 export const VIEWPORT_HEIGHT = CANVAS_HEIGHT;
+export const WORLD_WIDTH = 6000; // requested width
+export const WORLD_HEIGHT = 5500; // requested height
 
 // Zoom system
 export const MAX_ZOOM_OUT = 3;
@@ -58,4 +59,3 @@ export const STAR_FIELD_MULTIPLIER = 3;
 export const STAR_FIELD_SPREAD = 1.5;
 export const MIN_PARALLAX = 0.3;
 export const MAX_PARALLAX = 0.7;
-

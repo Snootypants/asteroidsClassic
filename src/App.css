@@ -6,79 +6,67 @@ html, body {
 }
 
 .app {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
   background-color: #000;
   color: white;
   font-family: Arial, sans-serif;
-  width: 100vw;
-  height: 100vh;
   overflow: hidden;
   box-sizing: border-box;
-  padding: 0;
 }
 
-canvas {
+.play-area {
+  position: absolute;
   border: 2px solid white;
   background-color: #000;
+  /* Position and size set dynamically via JavaScript */
+}
+
+.play-area canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
   cursor: crosshair;
-}
-
-canvas.pointer-locked {
-  cursor: none;
-}
-
-.bottom-ui {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 1200px;
-  margin-top: 110px; /* Provide clearance for minimap that extends 90px below canvas + some spacing */
-}
-
-.ui-left {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  font-size: 20px;
-  font-weight: bold;
-  min-width: 120px;
-  position: absolute;
-  left: 260px; /* Center between canvas left edge (0px) and minimap left edge (520px): (0+520)/2 = 260px */
-  transform: translateX(-50%); /* Center the element itself */
-}
-
-
-.ui-right {
-  min-width: 120px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.minimap-label {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 5px;
 }
 
 .minimap-canvas {
   position: absolute;
-  bottom: -90px; /* 30px above canvas bottom (1/4), 90px below (3/4) */
+  bottom: -90px;
   left: 50%;
-  transform: translateX(-50%); /* Center horizontally */
+  transform: translateX(-50%);
   border: 2px solid white;
   background-color: #000;
-  z-index: 10; /* Ensure it's above other elements */
+  z-index: 10;
+  /* Size set dynamically via JavaScript */
+}
+
+.hud-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* Removed - now using inline styles for Score/Lives */
+
+.hud-right {
+  display: flex;
+  align-items: center;
 }
 
 .game-over {
   color: red;
   font-size: 24px;
   font-weight: bold;
+  margin-right: 20px;
 }
-
 
 .game-button {
   background-color: #1a1a1a;
@@ -102,43 +90,6 @@ canvas.pointer-locked {
   transform: scale(0.95);
 }
 
-.game-container {
-  position: relative;
-  display: inline-block;
-}
-
-canvas.paused {
-  filter: blur(2px);
-  transition: filter 0.3s ease;
-}
-
-.pause-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  pointer-events: none;
-}
-
-.pause-text {
-  font-size: 48px;
-  font-weight: bold;
-  color: white;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-  margin-bottom: 10px;
-}
-
-.pause-instruction {
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.8);
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
 
 .title-overlay {
   position: absolute;
@@ -152,6 +103,7 @@ canvas.paused {
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.8);
   pointer-events: none;
+  z-index: 20;
 }
 
 .title-text {
@@ -168,4 +120,3 @@ canvas.paused {
   color: rgba(255, 255, 255, 0.9);
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
-

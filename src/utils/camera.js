@@ -9,31 +9,31 @@ export class Camera {
   }
 
   // Convert world coordinates to screen coordinates
-  worldToScreen(worldX, worldY) {
-    const effectiveViewportWidth = VIEWPORT_WIDTH * this.zoom;
-    const effectiveViewportHeight = VIEWPORT_HEIGHT * this.zoom;
+  worldToScreen(worldX, worldY, viewportWidth = VIEWPORT_WIDTH, viewportHeight = VIEWPORT_HEIGHT) {
+    const effectiveViewportWidth = viewportWidth * this.zoom;
+    const effectiveViewportHeight = viewportHeight * this.zoom;
     
     return {
-      x: (worldX - this.x) * (VIEWPORT_WIDTH / effectiveViewportWidth) + VIEWPORT_WIDTH / 2,
-      y: (worldY - this.y) * (VIEWPORT_HEIGHT / effectiveViewportHeight) + VIEWPORT_HEIGHT / 2
+      x: (worldX - this.x) * (viewportWidth / effectiveViewportWidth) + viewportWidth / 2,
+      y: (worldY - this.y) * (viewportHeight / effectiveViewportHeight) + viewportHeight / 2
     };
   }
 
   // Convert screen coordinates to world coordinates
-  screenToWorld(screenX, screenY) {
-    const effectiveViewportWidth = VIEWPORT_WIDTH * this.zoom;
-    const effectiveViewportHeight = VIEWPORT_HEIGHT * this.zoom;
+  screenToWorld(screenX, screenY, viewportWidth = VIEWPORT_WIDTH, viewportHeight = VIEWPORT_HEIGHT) {
+    const effectiveViewportWidth = viewportWidth * this.zoom;
+    const effectiveViewportHeight = viewportHeight * this.zoom;
     
     return {
-      x: this.x + (screenX - VIEWPORT_WIDTH / 2) * (effectiveViewportWidth / VIEWPORT_WIDTH),
-      y: this.y + (screenY - VIEWPORT_HEIGHT / 2) * (effectiveViewportHeight / VIEWPORT_HEIGHT)
+      x: this.x + (screenX - viewportWidth / 2) * (effectiveViewportWidth / viewportWidth),
+      y: this.y + (screenY - viewportHeight / 2) * (effectiveViewportHeight / viewportHeight)
     };
   }
 
   // Update camera to follow ship with constraints
-  followShip(shipX, shipY) {
-    const effectiveViewportWidth = VIEWPORT_WIDTH * this.zoom;
-    const effectiveViewportHeight = VIEWPORT_HEIGHT * this.zoom;
+  followShip(shipX, shipY, viewportWidth = VIEWPORT_WIDTH, viewportHeight = VIEWPORT_HEIGHT) {
+    const effectiveViewportWidth = viewportWidth * this.zoom;
+    const effectiveViewportHeight = viewportHeight * this.zoom;
     
     const halfViewWidth = effectiveViewportWidth / 2;
     const halfViewHeight = effectiveViewportHeight / 2;
@@ -60,9 +60,9 @@ export class Camera {
   }
 
   // Check if a world position is visible in the viewport
-  isVisible(worldX, worldY, margin = 50) {
-    const effectiveViewportWidth = VIEWPORT_WIDTH * this.zoom;
-    const effectiveViewportHeight = VIEWPORT_HEIGHT * this.zoom;
+  isVisible(worldX, worldY, margin = 50, viewportWidth = VIEWPORT_WIDTH, viewportHeight = VIEWPORT_HEIGHT) {
+    const effectiveViewportWidth = viewportWidth * this.zoom;
+    const effectiveViewportHeight = viewportHeight * this.zoom;
     
     const halfViewWidth = effectiveViewportWidth / 2;
     const halfViewHeight = effectiveViewportHeight / 2;
