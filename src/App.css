@@ -26,7 +26,7 @@ canvas.pointer-locked {
   align-items: center;
   justify-content: space-between;
   width: 1200px;
-  margin-top: 20px;
+  margin-top: 110px; /* Provide clearance for minimap that extends 90px below canvas + some spacing */
 }
 
 .ui-left {
@@ -36,17 +36,8 @@ canvas.pointer-locked {
   font-size: 20px;
   font-weight: bold;
   min-width: 120px;
-  position: absolute;
-  left: 320px; /* Center between canvas left edge (10px) and minimap right edge (630px): (10+630)/2 = 320px */
 }
 
-.ui-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  margin-top: -90px; /* Move minimap up so 1/4 (30px) is inside play area, 3/4 (90px) below */
-}
 
 .ui-right {
   min-width: 120px;
@@ -61,8 +52,13 @@ canvas.pointer-locked {
 }
 
 .minimap-canvas {
+  position: absolute;
+  bottom: -90px; /* 30px above canvas bottom (1/4), 90px below (3/4) */
+  left: 50%;
+  transform: translateX(-50%); /* Center horizontally */
   border: 2px solid white;
   background-color: #000;
+  z-index: 10; /* Ensure it's above other elements */
 }
 
 .game-over {

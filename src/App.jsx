@@ -495,20 +495,18 @@ function App() {
             <div className="pause-instruction">Click to resume</div>
           </div>
         )}
+        <canvas 
+          ref={minimapCanvasRef}
+          width={MINIMAP_WIDTH}
+          height={MINIMAP_HEIGHT}
+          className="minimap-canvas"
+        />
       </div>
       <div className="bottom-ui">
         <div className="ui-left">
           <div>Score: {uiState.score}</div>
           <div>Lives: {uiState.lives}</div>
           {uiState.gameOver && <div className="game-over">Game Over</div>}
-        </div>
-        <div className="ui-center">
-          <canvas 
-            ref={minimapCanvasRef}
-            width={MINIMAP_WIDTH}
-            height={MINIMAP_HEIGHT}
-            className="minimap-canvas"
-          />
         </div>
         <div className="ui-right">
           {uiState.gameStarted && uiState.gameOver && (
