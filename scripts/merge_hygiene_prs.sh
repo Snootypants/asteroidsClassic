@@ -90,15 +90,12 @@ pm_script() {
   esac
 }
 
-# Bash 3 compatibility: mapfile/readarray polyfill
-read_into_array() {
-  # usage: some_command | read_into_array varname
-  local __name="$1"; shift || true
-  local __arr=()
-  local __line
-  while IFS= read -r __line; do
-    __arr+=("$__line")
-  done
+# Bash 3 compatibility helpers
+read_file_into_array() {
+  # usage: read_file_into_array varname filepath
+  local __name="$1"; local __file="$2"
+  local __arr=(); local __line
+  while IFS= read -r __line; do __arr+=("$__line"); done < "$__file"
   eval "$__name=(\"\${__arr[@]}\" )"
 }
 
@@ -143,7 +140,10 @@ else
   local_filter=".[]"
 fi
 prs=()
-jq -c "$local_filter" <<<"$prs_json" | read_into_array prs
+tmp_prs="$(mktemp)"
+jq -c "$local_filter" <<<"$prs_json" > "$tmp_prs"
+read_file_into_array prs "$tmp_prs"
+rm -f "$tmp_prs"
 
 if [[ ${#prs[@]} -eq 0 ]]; then
   log "No PRs matched filters."; exit 0
@@ -177,7 +177,10 @@ for row in "${prs[@]}"; do
   printf '%04d\t%s\n' "$bucket" "$row" >> "$tmp_sort"
 done
 sorted=()
-sort -n "$tmp_sort" | cut -f2- | read_into_array sorted
+tmp_sorted="$(mktemp)"
+sort -n "$tmp_sort" | cut -f2- > "$tmp_sorted"
+read_file_into_array sorted "$tmp_sorted"
+rm -f "$tmp_sorted"
 rm -f "$tmp_sort"
 
 log "Planned order:"
