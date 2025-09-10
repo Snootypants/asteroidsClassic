@@ -1,4 +1,4 @@
-import { WORLD_WIDTH, WORLD_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT, MIN_ZOOM, MAX_ZOOM_OUT, ZOOM_INTERPOLATION } from './constants.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT, MIN_ZOOM, MAX_ZOOM_OUT, ZOOM_INTERPOLATION, VISIBILITY_MARGIN } from './constants.js';
 
 export class Camera {
   constructor(x = WORLD_WIDTH / 2, y = WORLD_HEIGHT / 2) {
@@ -60,7 +60,7 @@ export class Camera {
   }
 
   // Check if a world position is visible in the viewport
-  isVisible(worldX, worldY, margin = 50, viewportWidth = VIEWPORT_WIDTH, viewportHeight = VIEWPORT_HEIGHT) {
+  isVisible(worldX, worldY, margin = VISIBILITY_MARGIN, viewportWidth = VIEWPORT_WIDTH, viewportHeight = VIEWPORT_HEIGHT) {
     const effectiveViewportWidth = viewportWidth * this.zoom;
     const effectiveViewportHeight = viewportHeight * this.zoom;
     

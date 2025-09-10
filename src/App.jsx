@@ -3,7 +3,7 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MINIMAP_WIDTH, MINIMAP_HEIGHT, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MINIMAP_WIDTH, MINIMAP_HEIGHT, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX, VISIBILITY_MARGIN } from './utils/constants.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import './App.css';
@@ -331,8 +331,8 @@ function App() {
       const screenPos = camera.worldToScreen(parallaxX, parallaxY, canvasWidth, canvasHeight);
       
       // Only draw if visible (with margin for star wrapping)
-      if (screenPos.x >= -50 && screenPos.x <= canvasWidth + 50 && 
-          screenPos.y >= -50 && screenPos.y <= canvasHeight + 50) {
+      if (screenPos.x >= -VISIBILITY_MARGIN && screenPos.x <= canvasWidth + VISIBILITY_MARGIN &&
+          screenPos.y >= -VISIBILITY_MARGIN && screenPos.y <= canvasHeight + VISIBILITY_MARGIN) {
         ctx.save();
         ctx.globalAlpha = star.brightness;
         ctx.fillStyle = 'white';
@@ -342,7 +342,7 @@ function App() {
     });
 
     // Draw ship
-    if (shipRef.current && camera.isVisible(shipRef.current.x, shipRef.current.y, 50, canvasWidth, canvasHeight)) {
+    if (shipRef.current && camera.isVisible(shipRef.current.x, shipRef.current.y, VISIBILITY_MARGIN, canvasWidth, canvasHeight)) {
       const screenPos = camera.worldToScreen(shipRef.current.x, shipRef.current.y, canvasWidth, canvasHeight);
       ctx.save();
       ctx.translate(screenPos.x, screenPos.y);
