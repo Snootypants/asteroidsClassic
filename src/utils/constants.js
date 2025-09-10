@@ -55,6 +55,7 @@ export const SHIP_DECELERATION = 0.92;
 
 // Camera constants
 export const ZOOM_INTERPOLATION = 0.1;
+export const VISIBILITY_MARGIN = 50;
 
 // Starfield generation constants
 export const STAR_FIELD_MULTIPLIER = 3;
