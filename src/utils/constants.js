@@ -4,7 +4,7 @@ export const CANVAS_HEIGHT = 900;
 export const SHIP_SIZE = 10;
 export const SHIP_SPEED = 0.12; // reduced for lower max ship speed
 // One place to configure firing cadence (also used for hold fire)
-export const FIRE_RATE_MS = 250; // 4 shots per second
+const FIRE_RATE_MS = 250; // 4 shots per second
 export const BULLET_FIRE_RATE = FIRE_RATE_MS; // backwards compatibility
 export const BULLET_SPEED = 20; // slightly faster bullets
 export const BULLET_LIFETIME = 100; // frames
