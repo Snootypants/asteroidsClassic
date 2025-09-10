@@ -1,4 +1,4 @@
-import { BULLET_SPEED, BULLET_LIFETIME, BULLET_SIZE, BULLET_RANGE } from '../utils/constants.js';
+import { BULLET_SPEED, BULLET_LIFETIME, BULLET_SIZE, BULLET_RANGE, BULLET_COLOR } from '../utils/constants.js';
 
 export class Bullet {
   constructor(x, y, angle) {
@@ -27,7 +27,7 @@ export class Bullet {
   draw(ctx) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = BULLET_COLOR;
     ctx.fill();
   }
 

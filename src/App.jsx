@@ -3,7 +3,7 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MINIMAP_WIDTH, MINIMAP_HEIGHT, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MINIMAP_WIDTH, MINIMAP_HEIGHT, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX, SHIP_COLOR, BULLET_COLOR, STAR_COLOR, CROSSHAIR_COLOR, HUD_TEXT_COLOR } from './utils/constants.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import './App.css';
@@ -335,7 +335,7 @@ function App() {
           screenPos.y >= -50 && screenPos.y <= canvasHeight + 50) {
         ctx.save();
         ctx.globalAlpha = star.brightness;
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = STAR_COLOR;
         ctx.fillRect(screenPos.x, screenPos.y, star.size / camera.zoom, star.size / camera.zoom);
         ctx.restore();
       }
@@ -355,7 +355,7 @@ function App() {
       ctx.lineTo(-size / 2, -size / 2);
       ctx.lineTo(-size / 2, size / 2);
       ctx.closePath();
-      ctx.strokeStyle = 'white';
+      ctx.strokeStyle = SHIP_COLOR;
       ctx.stroke();
       ctx.restore();
     }
@@ -380,7 +380,7 @@ function App() {
         const screenPos = camera.worldToScreen(bullet.x, bullet.y, canvasWidth, canvasHeight);
         ctx.beginPath();
         ctx.arc(screenPos.x, screenPos.y, bullet.size / camera.zoom, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = BULLET_COLOR;
         ctx.fill();
       }
     });
@@ -389,7 +389,7 @@ function App() {
     if (gameStartedRef.current) {
       const mousePos = mousePositionRef.current;
       const screenPos = camera.worldToScreen(mousePos.x, mousePos.y, canvasWidth, canvasHeight);
-      ctx.strokeStyle = 'white';
+      ctx.strokeStyle = CROSSHAIR_COLOR;
       ctx.lineWidth = 2;
       ctx.beginPath();
       // Horizontal line
@@ -587,7 +587,7 @@ function App() {
           gap: '32px',
           fontSize: '20px',
           fontWeight: 'bold',
-          color: 'white'
+          color: HUD_TEXT_COLOR
         }}>
           <div>Score: {uiState.score}</div>
           <div>Lives: {uiState.lives}</div>

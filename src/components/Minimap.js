@@ -1,4 +1,4 @@
-import { WORLD_WIDTH, WORLD_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../utils/constants.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT, MINIMAP_BG_COLOR, MINIMAP_ASTEROID_COLOR, SHIP_COLOR, MINIMAP_VIEWPORT_COLOR } from '../utils/constants.js';
 
 export class Minimap {
   static draw(ctx, ship, asteroids, camera) {
@@ -9,7 +9,7 @@ export class Minimap {
     // Clear and draw background (border is handled by CSS on the canvas)
     ctx.clearRect(0, 0, w, h);
     ctx.save();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+    ctx.fillStyle = MINIMAP_BG_COLOR;
     ctx.fillRect(0, 0, w, h);
 
     // Scale factors
@@ -17,7 +17,7 @@ export class Minimap {
     const scaleY = h / WORLD_HEIGHT;
     
     // Draw asteroids as small gray dots
-    ctx.fillStyle = 'gray';
+    ctx.fillStyle = MINIMAP_ASTEROID_COLOR;
     asteroids.forEach(asteroid => {
       if (asteroid) {
         const x = asteroid.x * scaleX;
@@ -30,11 +30,11 @@ export class Minimap {
     if (ship) {
       const shipX = ship.x * scaleX;
       const shipY = ship.y * scaleY;
-      ctx.fillStyle = 'white';
+      ctx.fillStyle = SHIP_COLOR;
       ctx.fillRect(shipX - 1.5, shipY - 1.5, 3, 3);
       
       // Draw ship direction indicator
-      ctx.strokeStyle = 'white';
+      ctx.strokeStyle = SHIP_COLOR;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(shipX, shipY);
@@ -53,7 +53,7 @@ export class Minimap {
     const viewW = effectiveViewportWidth * scaleX;
     const viewH = effectiveViewportHeight * scaleY;
     
-    ctx.strokeStyle = 'yellow';
+    ctx.strokeStyle = MINIMAP_VIEWPORT_COLOR;
     ctx.lineWidth = 1;
     ctx.strokeRect(viewX, viewY, viewW, viewH);
     

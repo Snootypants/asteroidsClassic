@@ -1,4 +1,4 @@
-import { SHIP_SIZE, SHIP_SPEED } from '../utils/constants.js';
+import { SHIP_SIZE, SHIP_SPEED, SHIP_COLOR } from '../utils/constants.js';
 
 export class Ship {
   constructor(x, y) {
@@ -20,7 +20,7 @@ export class Ship {
     ctx.lineTo(-this.size / 2, -this.size / 2);
     ctx.lineTo(-this.size / 2, this.size / 2);
     ctx.closePath();
-    ctx.strokeStyle = 'white';
+    ctx.strokeStyle = SHIP_COLOR;
     ctx.stroke();
     ctx.restore();
   }

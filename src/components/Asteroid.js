@@ -1,4 +1,4 @@
-import { ASTEROID_SPEED, ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL } from '../utils/constants.js';
+import { ASTEROID_SPEED, ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL, ASTEROID_COLOR } from '../utils/constants.js';
 
 export class Asteroid {
   constructor(x, y, size = ASTEROID_SIZE_LARGE, parentVelocity = null) {
@@ -56,7 +56,7 @@ export class Asteroid {
     }
     
     ctx.closePath();
-    ctx.strokeStyle = 'white';
+    ctx.strokeStyle = ASTEROID_COLOR;
     ctx.stroke();
     ctx.restore();
   }

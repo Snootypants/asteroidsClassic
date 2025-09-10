@@ -61,3 +61,14 @@ export const STAR_FIELD_MULTIPLIER = 3;
 export const STAR_FIELD_SPREAD = 1.5;
 export const MIN_PARALLAX = 0.3;
 export const MAX_PARALLAX = 0.7;
+
+// Color constants
+export const SHIP_COLOR = 'white';
+export const BULLET_COLOR = 'white';
+export const ASTEROID_COLOR = 'white';
+export const STAR_COLOR = 'white';
+export const CROSSHAIR_COLOR = 'white';
+export const MINIMAP_BG_COLOR = 'rgba(0, 0, 0, 0.9)';
+export const MINIMAP_ASTEROID_COLOR = 'gray';
+export const MINIMAP_VIEWPORT_COLOR = 'yellow';
+export const HUD_TEXT_COLOR = 'white';
