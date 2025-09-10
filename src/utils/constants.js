@@ -48,6 +48,7 @@ export const BULLET_RANGE = VIEWPORT_WIDTH * 2;
 // Minimap
 export const MINIMAP_WIDTH = 160;
 export const MINIMAP_HEIGHT = 120;
+export const MAX_MINIMAP_HEIGHT_RATIO = 0.2; // at most 20% of play height
 
 // Ship physics constants
 export const SHIP_FRICTION = 0.99;
