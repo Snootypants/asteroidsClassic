@@ -61,3 +61,16 @@ export const STAR_FIELD_MULTIPLIER = 3;
 export const STAR_FIELD_SPREAD = 1.5;
 export const MIN_PARALLAX = 0.3;
 export const MAX_PARALLAX = 0.7;
+
+// Layout constants
+export const MARGIN_LEFT = 100;
+export const MARGIN_RIGHT = 100;
+export const MARGIN_TOP = 100;
+export const MARGIN_BOTTOM = 200;
+
+// Target play area aspect ratio
+export const ASPECT_RATIO = 1349 / 817; // ≈1.6514041591
+
+// Minimap sizing ratios
+export const MINIMAP_WIDTH_RATIO = 0.3276501112; // keep visual width similar to before
+export const MAX_MINIMAP_HEIGHT_RATIO = 0.2; // at most 20% of play height
