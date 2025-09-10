@@ -510,7 +510,6 @@ function App() {
         minimapCanvas.height = minimapHeight;
         minimapCanvas.style.width = `${minimapWidth}px`;
         minimapCanvas.style.height = `${minimapHeight}px`;
-        console.log('Minimap dimensions set:', minimapWidth, minimapHeight);
       }
 
       // Keep minimap and stats vertically aligned regardless of window size
@@ -525,19 +524,6 @@ function App() {
       window.currentCanvasWidth = updatedCanvasWidth;
       window.currentCanvasHeight = updatedCanvasHeight;
       
-      // Debug logging
-      console.log('Layout calc:', {
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        availableWidth,
-        availableHeight,
-        playWidth,
-        playHeight,
-        playX,
-        playY,
-        minimapWidth,
-        minimapHeight
-      });
     };
 
     // Initial layout calculation with a small delay to ensure DOM is ready
