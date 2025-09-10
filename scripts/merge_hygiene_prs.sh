@@ -142,6 +142,7 @@ if [[ ${#jq_filters[@]} -gt 0 ]]; then
 else
   local_filter=".[]"
 fi
+prs=()
 jq -c "$local_filter" <<<"$prs_json" | read_into_array prs
 
 if [[ ${#prs[@]} -eq 0 ]]; then
@@ -175,6 +176,7 @@ for row in "${prs[@]}"; do
   bucket=$(classify_bucket "$title")
   printf '%04d\t%s\n' "$bucket" "$row" >> "$tmp_sort"
 done
+sorted=()
 sort -n "$tmp_sort" | cut -f2- | read_into_array sorted
 rm -f "$tmp_sort"
 
