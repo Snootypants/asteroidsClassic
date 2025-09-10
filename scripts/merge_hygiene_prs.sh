@@ -90,6 +90,18 @@ pm_script() {
   esac
 }
 
+# Bash 3 compatibility: mapfile/readarray polyfill
+read_into_array() {
+  # usage: some_command | read_into_array varname
+  local __name="$1"; shift || true
+  local __arr=()
+  local __line
+  while IFS= read -r __line; do
+    __arr+=("$__line")
+  done
+  eval "$__name=(\"\${__arr[@]}\" )"
+}
+
 # Ensure clean working tree
 if [[ -n "$(git status --porcelain)" ]]; then
   die "Working tree not clean. Commit or stash changes first."
@@ -130,7 +142,7 @@ if [[ ${#jq_filters[@]} -gt 0 ]]; then
 else
   local_filter=".[]"
 fi
-mapfile -t prs < <(jq -c "$local_filter" <<<"$prs_json")
+jq -c "$local_filter" <<<"$prs_json" | read_into_array prs
 
 if [[ ${#prs[@]} -eq 0 ]]; then
   log "No PRs matched filters."; exit 0
@@ -163,7 +175,7 @@ for row in "${prs[@]}"; do
   bucket=$(classify_bucket "$title")
   printf '%04d\t%s\n' "$bucket" "$row" >> "$tmp_sort"
 done
-mapfile -t sorted < <(sort -n "$tmp_sort" | cut -f2-)
+sort -n "$tmp_sort" | cut -f2- | read_into_array sorted
 rm -f "$tmp_sort"
 
 log "Planned order:"
@@ -271,4 +283,3 @@ if [[ $use_staging -eq 1 ]]; then
 fi
 
 log "Done."
-
