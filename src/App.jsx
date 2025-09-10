@@ -85,8 +85,11 @@ function App() {
       if (['KeyA', 'KeyD', 'KeyW', 'KeyS', 'Space', 'Escape'].includes(e.code)) {
         e.preventDefault();
       }
-      
-      
+
+      if (e.code === 'Escape' && document.pointerLockElement) {
+        document.exitPointerLock();
+      }
+
       keysRef.current[e.code] = true;
     };
     
@@ -193,6 +196,10 @@ function App() {
   // Removed interval-based continuous shooting; handled in update()
 
   const handleCanvasClick = () => {
+    const canvas = canvasRef.current;
+    if (canvas && document.pointerLockElement !== canvas) {
+      canvas.requestPointerLock();
+    }
     if (!uiState.gameStarted) {
       startGame();
     }

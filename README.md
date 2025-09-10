@@ -10,7 +10,7 @@ A modern recreation of the classic Asteroids arcade game built with React and HT
 - **Classic Physics**: Momentum-based movement with smooth friction
 - **Dynamic Asteroid Splitting**: Large asteroids break into smaller pieces when shot
 - **Starfield Background**: Randomly generated stars with varying brightness
-- **Pointer Lock Integration**: Click canvas to capture mouse, ESC to release and pause
+- **Pointer Lock Integration**: Click the canvas to lock the pointer for smooth aiming; press ESC to release the lock and pause
 - **Professional UI**: Clean title screen, pause overlay, score tracking
 
 ## Controls
@@ -20,7 +20,7 @@ A modern recreation of the classic Asteroids arcade game built with React and HT
 - **Left Click**: Shoot (single shot or hold for continuous)
 - **W Key**: Forward thrust
 - **S Key**: Brake (slow down)
-- **ESC Key**: Pause game and release mouse
+- **ESC Key**: Release pointer lock and pause game
 
 ## Getting Started
 
