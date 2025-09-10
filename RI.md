@@ -143,9 +143,11 @@ import {
 5. **Debugging steps for black screen**:
    ```javascript
    // Add temporary logging to verify:
-   console.log('Camera position:', camera.x, camera.y);
-   console.log('Ship position:', ship.x, ship.y);
-   console.log('World bounds:', WORLD_WIDTH, WORLD_HEIGHT);
+   if (import.meta.env.DEV) {
+     console.log('Camera position:', camera.x, camera.y);
+     console.log('Ship position:', ship.x, ship.y);
+     console.log('World bounds:', WORLD_WIDTH, WORLD_HEIGHT);
+   }
    ```
    
 6. **Check browser console immediately**
