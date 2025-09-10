@@ -245,7 +245,9 @@ for row in "${sorted[@]}"; do
   head=$(jq -r .headRefName <<<"$row")
 
   log "=== PR #$num: $title ==="
-  gh pr checkout "$num" --repo "$repo"
+  tmp_branch="tmp-pr-$num-$ts"
+  git fetch origin "pull/$num/head:$tmp_branch" --force
+  git checkout "$tmp_branch"
 
   git fetch origin "$default_branch"
   set +e
