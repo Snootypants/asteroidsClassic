@@ -1,4 +1,14 @@
-import { ASTEROID_SPEED, ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL } from '../utils/constants.js';
+import {
+  ASTEROID_SPEED,
+  ASTEROID_SIZE_LARGE,
+  ASTEROID_SIZE_MEDIUM,
+  ASTEROID_SIZE_SMALL,
+  ASTEROID_ROTATION_SPEED_RANGE,
+  ASTEROID_BASE_POINTS,
+  ASTEROID_POINT_VARIATION,
+  ASTEROID_RADIUS_VARIATION_BASE,
+  ASTEROID_RADIUS_VARIATION_RANGE
+} from '../utils/constants.js';
 
 export class Asteroid {
   constructor(x, y, size = ASTEROID_SIZE_LARGE, parentVelocity = null) {
@@ -23,13 +33,17 @@ export class Asteroid {
     
     this.size = size;
     this.angle = Math.random() * Math.PI * 2;
-    this.rotationSpeed = (Math.random() - 0.5) * 0.1;
-    
+    this.rotationSpeed = (Math.random() - 0.5) * ASTEROID_ROTATION_SPEED_RANGE;
+
     // Generate random shape variations
-    this.points = 8 + Math.floor(Math.random() * 4); // 8-11 points
+    this.points =
+      ASTEROID_BASE_POINTS + Math.floor(Math.random() * ASTEROID_POINT_VARIATION); // 8-11 points
     this.radiusVariations = [];
     for (let i = 0; i < this.points; i++) {
-      this.radiusVariations.push(0.7 + Math.random() * 0.6); // 0.7 to 1.3 of base radius
+      this.radiusVariations.push(
+        ASTEROID_RADIUS_VARIATION_BASE +
+          Math.random() * ASTEROID_RADIUS_VARIATION_RANGE
+      ); // 0.7 to 1.3 of base radius
     }
   }
 
