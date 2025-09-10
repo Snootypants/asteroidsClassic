@@ -557,10 +557,10 @@ function App() {
   return (
     <div className="app">
       <div className="play-area">
-        <canvas 
-          ref={canvasRef} 
-          width={1200} 
-          height={900} 
+        <canvas
+          ref={canvasRef}
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
           onClick={handleCanvasClick}
           className="game-canvas"
         />
