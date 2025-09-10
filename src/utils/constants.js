@@ -15,6 +15,8 @@ export const ASTEROID_SIZE_SMALL = 10;
 export const STAR_COUNT = 2000; // Increased star density
 export const STAR_MIN_BRIGHTNESS = 0.2;
 export const STAR_MAX_BRIGHTNESS = 1.0;
+export const STAR_BRIGHTNESS_MEAN = 0.5;
+export const STAR_BRIGHTNESS_STD_DEV = 0.15;
 
 // Game configuration constants
 export const INITIAL_ASTEROID_COUNT = 5;
@@ -29,6 +31,10 @@ export const BULLET_SIZE = 2;
 // Star brightness thresholds
 export const STAR_LARGE_THRESHOLD = 0.7;
 export const STAR_MEDIUM_THRESHOLD = 0.4;
+export const STAR_SIZE_LARGE = 2;
+export const STAR_SIZE_MEDIUM = 1.5;
+export const STAR_SIZE_SMALL = 1;
+export const STAR_VISIBILITY_MARGIN = 50;
 
 // Phase 2: Big Map constants
 // Large world; shape is authoritative for the minimap

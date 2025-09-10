@@ -3,7 +3,40 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MINIMAP_WIDTH, MINIMAP_HEIGHT, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX } from './utils/constants.js';
+import {
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  BULLET_FIRE_RATE,
+  STAR_COUNT,
+  STAR_MIN_BRIGHTNESS,
+  STAR_MAX_BRIGHTNESS,
+  STAR_BRIGHTNESS_MEAN,
+  STAR_BRIGHTNESS_STD_DEV,
+  INITIAL_ASTEROID_COUNT,
+  MAX_BULLETS,
+  CONTINUOUS_FIRE_RATE,
+  CROSSHAIR_SIZE,
+  MOUSE_OFFSET,
+  SCORE_PER_ASTEROID,
+  INITIAL_LIVES,
+  STAR_LARGE_THRESHOLD,
+  STAR_MEDIUM_THRESHOLD,
+  STAR_SIZE_LARGE,
+  STAR_SIZE_MEDIUM,
+  STAR_SIZE_SMALL,
+  STAR_VISIBILITY_MARGIN,
+  WORLD_WIDTH,
+  WORLD_HEIGHT,
+  ZOOM_SPEED,
+  MINIMAP_WIDTH,
+  MINIMAP_HEIGHT,
+  SHIP_FRICTION,
+  SHIP_DECELERATION,
+  STAR_FIELD_MULTIPLIER,
+  STAR_FIELD_SPREAD,
+  MIN_PARALLAX,
+  MAX_PARALLAX
+} from './utils/constants.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import './App.css';
@@ -44,8 +77,8 @@ function App() {
       const u2 = Math.random();
       const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
       
-      // Convert to bell curve centered at 0.5 with std dev of 0.15
-      let brightness = 0.5 + z0 * 0.15;
+      // Convert to bell curve using configured mean and standard deviation
+      let brightness = STAR_BRIGHTNESS_MEAN + z0 * STAR_BRIGHTNESS_STD_DEV;
       // Clamp to valid range
       brightness = Math.max(STAR_MIN_BRIGHTNESS, Math.min(STAR_MAX_BRIGHTNESS, brightness));
       
@@ -53,7 +86,11 @@ function App() {
         x: Math.random() * WORLD_WIDTH * STAR_FIELD_SPREAD, // Spread beyond world boundaries
         y: Math.random() * WORLD_HEIGHT * STAR_FIELD_SPREAD,
         brightness: brightness,
-        size: brightness > STAR_LARGE_THRESHOLD ? 2 : brightness > STAR_MEDIUM_THRESHOLD ? 1.5 : 1,
+        size: brightness > STAR_LARGE_THRESHOLD
+          ? STAR_SIZE_LARGE
+          : brightness > STAR_MEDIUM_THRESHOLD
+            ? STAR_SIZE_MEDIUM
+            : STAR_SIZE_SMALL,
         parallax: MIN_PARALLAX + Math.random() * (MAX_PARALLAX - MIN_PARALLAX) // Random parallax speed
       });
     }
@@ -331,8 +368,12 @@ function App() {
       const screenPos = camera.worldToScreen(parallaxX, parallaxY, canvasWidth, canvasHeight);
       
       // Only draw if visible (with margin for star wrapping)
-      if (screenPos.x >= -50 && screenPos.x <= canvasWidth + 50 && 
-          screenPos.y >= -50 && screenPos.y <= canvasHeight + 50) {
+      if (
+        screenPos.x >= -STAR_VISIBILITY_MARGIN &&
+        screenPos.x <= canvasWidth + STAR_VISIBILITY_MARGIN &&
+        screenPos.y >= -STAR_VISIBILITY_MARGIN &&
+        screenPos.y <= canvasHeight + STAR_VISIBILITY_MARGIN
+      ) {
         ctx.save();
         ctx.globalAlpha = star.brightness;
         ctx.fillStyle = 'white';
