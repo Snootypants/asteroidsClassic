@@ -3,7 +3,7 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MINIMAP_WIDTH, MINIMAP_HEIGHT, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX, MARGIN_LEFT, MARGIN_RIGHT, MARGIN_TOP, MARGIN_BOTTOM, ASPECT_RATIO, MINIMAP_WIDTH_RATIO, MAX_MINIMAP_HEIGHT_RATIO } from './utils/constants.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import './App.css';
@@ -442,20 +442,7 @@ function App() {
   // Dynamic layout system with fixed margins and locked aspect ratio
   useEffect(() => {
     const updateGameLayout = () => {
-      // Fixed margins
-      const MARGIN_LEFT = 100;
-      const MARGIN_RIGHT = 100;
-      const MARGIN_TOP = 100;
-      const MARGIN_BOTTOM = 200;
-      
-      // Target aspect ratio 1349:817
-      const ASPECT_RATIO = 1349 / 817; // ≈1.6514041591
-      
-      // Minimap sizing: width is a proportion of the play area,
-      // height derived from the WORLD aspect ratio so the shape matches the world.
-      const MINIMAP_WIDTH_RATIO = 0.3276501112; // keep visual width similar to before
-      
-      // Calculate available box
+      // Calculate available box using fixed margins
       const availableWidth = window.innerWidth - MARGIN_LEFT - MARGIN_RIGHT;
       const availableHeight = window.innerHeight - MARGIN_TOP - MARGIN_BOTTOM;
       
@@ -480,7 +467,6 @@ function App() {
       let minimapWidth = Math.round(playWidth * MINIMAP_WIDTH_RATIO);
       let minimapHeight = Math.round(minimapWidth * worldAspect);
       // Guard: if height would exceed a reasonable portion of play area, cap by height and recompute width
-      const MAX_MINIMAP_HEIGHT_RATIO = 0.2; // at most 20% of play height
       const maxMinimapHeight = Math.round(playHeight * MAX_MINIMAP_HEIGHT_RATIO);
       if (minimapHeight > maxMinimapHeight) {
         minimapHeight = maxMinimapHeight;

@@ -49,6 +49,15 @@ export const BULLET_RANGE = VIEWPORT_WIDTH * 2;
 export const MINIMAP_WIDTH = 160;
 export const MINIMAP_HEIGHT = 120;
 
+// Layout and minimap sizing
+export const MARGIN_LEFT = 100;
+export const MARGIN_RIGHT = 100;
+export const MARGIN_TOP = 100;
+export const MARGIN_BOTTOM = 200;
+export const ASPECT_RATIO = 1349 / 817; // Target aspect ratio ≈1.6514
+export const MINIMAP_WIDTH_RATIO = 0.3276501112;
+export const MAX_MINIMAP_HEIGHT_RATIO = 0.2; // At most 20% of play height
+
 // Ship physics constants
 export const SHIP_FRICTION = 0.99;
 export const SHIP_DECELERATION = 0.92;
