@@ -9,8 +9,6 @@ export class Bullet {
     this.lifetime = BULLET_LIFETIME;
     this.size = BULLET_SIZE;
     this.distanceTraveled = 0; // Track total distance for range limit
-    this.lastX = x;
-    this.lastY = y;
   }
 
   update() {
@@ -22,9 +20,6 @@ export class Bullet {
     this.x += this.vx;
     this.y += this.vy;
     this.lifetime--;
-    
-    this.lastX = this.x;
-    this.lastY = this.y;
     
     return this;
   }
@@ -40,3 +35,4 @@ export class Bullet {
     return this.lifetime <= 0 || this.distanceTraveled >= BULLET_RANGE;
   }
 }
+

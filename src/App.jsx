@@ -3,7 +3,7 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MAX_ZOOM_OUT, MIN_ZOOM, MINIMAP_WIDTH, MINIMAP_HEIGHT } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MINIMAP_WIDTH, MINIMAP_HEIGHT, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX } from './utils/constants.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import './App.css';
@@ -17,7 +17,7 @@ function App() {
   const bulletsRef = useRef([]);
   const keysRef = useRef({});
   const scoreRef = useRef(0);
-  const livesRef = useRef(3);
+  const livesRef = useRef(INITIAL_LIVES);
   const gameOverRef = useRef(false);
   const gameStartedRef = useRef(false);
   const requestRef = useRef();
@@ -41,7 +41,7 @@ function App() {
   // Generate stars with bell curve distribution
   const generateStarfield = useCallback(() => {
     const stars = [];
-    for (let i = 0; i < STAR_COUNT * 3; i++) { // More stars for bigger world
+    for (let i = 0; i < STAR_COUNT * STAR_FIELD_MULTIPLIER; i++) { // More stars for bigger world
       // Box-Muller transform for normal distribution
       const u1 = Math.random();
       const u2 = Math.random();
@@ -53,18 +53,18 @@ function App() {
       brightness = Math.max(STAR_MIN_BRIGHTNESS, Math.min(STAR_MAX_BRIGHTNESS, brightness));
       
       stars.push({
-        x: Math.random() * WORLD_WIDTH * 1.5, // Spread beyond world boundaries
-        y: Math.random() * WORLD_HEIGHT * 1.5,
+        x: Math.random() * WORLD_WIDTH * STAR_FIELD_SPREAD, // Spread beyond world boundaries
+        y: Math.random() * WORLD_HEIGHT * STAR_FIELD_SPREAD,
         brightness: brightness,
         size: brightness > STAR_LARGE_THRESHOLD ? 2 : brightness > STAR_MEDIUM_THRESHOLD ? 1.5 : 1,
-        parallax: 0.3 + Math.random() * 0.4 // Random parallax speed (0.3-0.7)
+        parallax: MIN_PARALLAX + Math.random() * (MAX_PARALLAX - MIN_PARALLAX) // Random parallax speed
       });
     }
     starsRef.current = stars;
   }, []);
 
-  // Initialize asteroids and stars
-  useEffect(() => {
+  // Reusable function to initialize asteroids
+  const initializeAsteroids = useCallback(() => {
     const initialAsteroids = [];
     for (let i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
       const x = Math.random() * WORLD_WIDTH;
@@ -72,10 +72,15 @@ function App() {
       initialAsteroids.push(new Asteroid(x, y));
     }
     asteroidsRef.current = initialAsteroids;
+  }, []);
+
+  // Initialize asteroids and stars
+  useEffect(() => {
+    initializeAsteroids();
 
     // Generate initial starfield
     generateStarfield();
-  }, [generateStarfield]);
+  }, [generateStarfield, initializeAsteroids]);
 
   // Handle pointer lock and mouse/keyboard input
   useEffect(() => {
@@ -164,7 +169,7 @@ function App() {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('wheel', handleWheel);
+    document.addEventListener('wheel', handleWheel, { passive: true });
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
@@ -187,6 +192,7 @@ function App() {
     scoreRef.current = 0;
     livesRef.current = INITIAL_LIVES;
     gameOverRef.current = false;
+    lastShotTimeRef.current = 0;
     shipRef.current = new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
     bulletsRef.current = [];
     
@@ -204,13 +210,7 @@ function App() {
     };
     
     // Re-initialize asteroids
-    const initialAsteroids = [];
-    for (let i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
-      const x = Math.random() * WORLD_WIDTH;
-      const y = Math.random() * WORLD_HEIGHT;
-      initialAsteroids.push(new Asteroid(x, y));
-    }
-    asteroidsRef.current = initialAsteroids;
+    initializeAsteroids();
     
     // Regenerate starfield for new game
     generateStarfield();
@@ -276,11 +276,11 @@ function App() {
     
     // S key brakes (slows down to zero, no reverse)
     if (keys.KeyS) {
-      ship.vx *= 0.92;
-      ship.vy *= 0.92;
+      ship.vx *= SHIP_DECELERATION;
+      ship.vy *= SHIP_DECELERATION;
     } else {
-      ship.vx *= 0.99;
-      ship.vy *= 0.99;
+      ship.vx *= SHIP_FRICTION;
+      ship.vy *= SHIP_FRICTION;
     }
     wrapPosition(ship); // World wrapping
 
@@ -456,12 +456,24 @@ function App() {
     const loop = () => {
       update();
       render();
-      setUiState((prev) => ({
-        ...prev,
-        score: scoreRef.current,
-        lives: livesRef.current,
-        gameOver: gameOverRef.current
-      }));
+      
+      // Throttle UI updates - only update when values actually change
+      setUiState((prev) => {
+        const newScore = scoreRef.current;
+        const newLives = livesRef.current;
+        const newGameOver = gameOverRef.current;
+        
+        if (prev.score !== newScore || prev.lives !== newLives || prev.gameOver !== newGameOver) {
+          return {
+            ...prev,
+            score: newScore,
+            lives: newLives,
+            gameOver: newGameOver
+          };
+        }
+        return prev; // No changes, return previous state to prevent re-render
+      });
+      
       requestRef.current = requestAnimationFrame(loop);
     };
     
@@ -472,6 +484,37 @@ function App() {
       }
     };
   }, [update, render]);
+
+  // Responsive scaling
+  useEffect(() => {
+    const updateGameScale = () => {
+      const container = document.querySelector('.game-container');
+      if (!container) return;
+
+      // Total game area: canvas (1200x900) + minimap extension (90px) + bottom UI (~130px)
+      const totalWidth = 1200;
+      const totalHeight = 900 + 90 + 130; // Canvas + minimap extension + bottom UI
+      
+      const scaleX = (window.innerWidth - 40) / totalWidth; // 40px for margins
+      const scaleY = (window.innerHeight - 40) / totalHeight;
+      const scale = Math.min(scaleX, scaleY, 1); // Don't scale above 100%
+      
+      container.style.transform = `scale(${scale})`;
+      container.style.transformOrigin = 'center center';
+      
+      // Adjust parent container to account for scaled size
+      const gameArea = container.parentElement;
+      if (gameArea) {
+        gameArea.style.width = `${totalWidth * scale}px`;
+        gameArea.style.height = `${totalHeight * scale}px`;
+      }
+    };
+
+    updateGameScale();
+    window.addEventListener('resize', updateGameScale);
+    
+    return () => window.removeEventListener('resize', updateGameScale);
+  }, []);
 
   return (
     <div className="app">
@@ -519,3 +562,4 @@ function App() {
 }
 
 export default App;
+

@@ -1,4 +1,4 @@
-import { WORLD_WIDTH, WORLD_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from './constants.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT, MIN_ZOOM, MAX_ZOOM_OUT, ZOOM_INTERPOLATION } from './constants.js';
 
 export class Camera {
   constructor(x = WORLD_WIDTH / 2, y = WORLD_HEIGHT / 2) {
@@ -78,7 +78,7 @@ export class Camera {
   // Update zoom with smooth interpolation
   updateZoom(deltaTime = 1) {
     if (Math.abs(this.targetZoom - this.zoom) > 0.01) {
-      this.zoom += (this.targetZoom - this.zoom) * 0.1 * deltaTime;
+      this.zoom += (this.targetZoom - this.zoom) * ZOOM_INTERPOLATION * deltaTime;
     } else {
       this.zoom = this.targetZoom;
     }
@@ -86,6 +86,7 @@ export class Camera {
 
   // Set target zoom level
   setZoom(zoom) {
-    this.targetZoom = Math.max(1, Math.min(3, zoom));
+    this.targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM_OUT, zoom));
   }
 }
+

@@ -45,4 +45,17 @@ export const BULLET_RANGE = VIEWPORT_WIDTH * 2;
 // Minimap
 export const MINIMAP_WIDTH = 160;
 export const MINIMAP_HEIGHT = 120;
-export const MINIMAP_SCALE = MINIMAP_WIDTH / WORLD_WIDTH;
+
+// Ship physics constants
+export const SHIP_FRICTION = 0.99;
+export const SHIP_DECELERATION = 0.92;
+
+// Camera constants
+export const ZOOM_INTERPOLATION = 0.1;
+
+// Starfield generation constants
+export const STAR_FIELD_MULTIPLIER = 3;
+export const STAR_FIELD_SPREAD = 1.5;
+export const MIN_PARALLAX = 0.3;
+export const MAX_PARALLAX = 0.7;
+
