@@ -8,6 +8,8 @@ import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import './App.css';
 
+const DEBUG = false;
+
 function App() {
   const canvasRef = useRef(null);
   const minimapCanvasRef = useRef(null);
@@ -510,7 +512,9 @@ function App() {
         minimapCanvas.height = minimapHeight;
         minimapCanvas.style.width = `${minimapWidth}px`;
         minimapCanvas.style.height = `${minimapHeight}px`;
-        console.log('Minimap dimensions set:', minimapWidth, minimapHeight);
+        if (DEBUG) {
+          console.log('Minimap dimensions set:', minimapWidth, minimapHeight);
+        }
       }
 
       // Keep minimap and stats vertically aligned regardless of window size
@@ -526,18 +530,20 @@ function App() {
       window.currentCanvasHeight = updatedCanvasHeight;
       
       // Debug logging
-      console.log('Layout calc:', {
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        availableWidth,
-        availableHeight,
-        playWidth,
-        playHeight,
-        playX,
-        playY,
-        minimapWidth,
-        minimapHeight
-      });
+      if (DEBUG) {
+        console.log('Layout calc:', {
+          windowWidth: window.innerWidth,
+          windowHeight: window.innerHeight,
+          availableWidth,
+          availableHeight,
+          playWidth,
+          playHeight,
+          playX,
+          playY,
+          minimapWidth,
+          minimapHeight
+        });
+      }
     };
 
     // Initial layout calculation with a small delay to ensure DOM is ready
