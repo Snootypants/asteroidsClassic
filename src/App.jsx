@@ -343,20 +343,11 @@ function App() {
 
     // Draw ship
     if (shipRef.current && camera.isVisible(shipRef.current.x, shipRef.current.y, 50, canvasWidth, canvasHeight)) {
-      const screenPos = camera.worldToScreen(shipRef.current.x, shipRef.current.y, canvasWidth, canvasHeight);
       ctx.save();
-      ctx.translate(screenPos.x, screenPos.y);
-      ctx.scale(1/camera.zoom, 1/camera.zoom);
-      ctx.rotate(shipRef.current.angle);
-      // Draw ship triangle
-      const size = shipRef.current.size;
-      ctx.beginPath();
-      ctx.moveTo(size, 0);
-      ctx.lineTo(-size / 2, -size / 2);
-      ctx.lineTo(-size / 2, size / 2);
-      ctx.closePath();
-      ctx.strokeStyle = 'white';
-      ctx.stroke();
+      ctx.translate(canvasWidth / 2, canvasHeight / 2);
+      ctx.scale(1 / camera.zoom, 1 / camera.zoom);
+      ctx.translate(-camera.x, -camera.y);
+      shipRef.current.draw(ctx);
       ctx.restore();
     }
     
