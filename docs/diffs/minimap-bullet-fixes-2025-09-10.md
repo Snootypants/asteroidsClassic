@@ -53,7 +53,7 @@ All requested fixes have been successfully implemented and tested.
  continuousShootingRef.current = setInterval(() => {
 -   shootBullet();
 +   shootBullet(false); // Apply bullet limit for continuous shooting
- }, CONTINUOUS_FIRE_RATE); // 4 shots per second
+ }, FIRE_RATE_MS); // 4 shots per second
 ```
 
 ## Summary of Behavior Changes
