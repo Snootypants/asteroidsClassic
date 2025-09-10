@@ -193,8 +193,12 @@ if ! confirm "Proceed with this order"; then log "Aborted."; exit 1; fi
 ts="$(date +%Y%m%d%H%M)"
 staging_branch="hygiene-integration-$ts"
 if [[ $use_staging -eq 1 ]]; then
-  log "Creating/refreshing staging branch: $staging_branch"
-  git checkout -B "$staging_branch" "origin/$default_branch"
+  if [[ $dry_run -eq 1 ]]; then
+    log "[DRY RUN] Would create/refresh staging branch: $staging_branch"
+  else
+    log "Creating/refreshing staging branch: $staging_branch"
+    git checkout -B "$staging_branch" "origin/$default_branch"
+  fi
 fi
 
 run_ci_local() {
@@ -225,6 +229,10 @@ merge_squash_auto() {
 
 merge_into_staging() {
   local num="$1"; local headRef="$2"; local url="$3"
+  if [[ $dry_run -eq 1 ]]; then
+    log "[DRY RUN] Would merge #$num ($headRef) into $staging_branch"
+    return 0
+  fi
   log "Merging #$num ($headRef) into $staging_branch"
   git checkout "$staging_branch"
   git fetch origin "pull/$num/head:pr-$num"
@@ -276,10 +284,12 @@ for row in "${sorted[@]}"; do
 done
 
 if [[ $use_staging -eq 1 ]]; then
-  log "Pushing staging branch"
-  if [[ $dry_run -eq 0 ]]; then git push -u origin "$staging_branch"; fi
-  log "Creating PR $staging_branch -> $default_branch"
-  if [[ $dry_run -eq 0 ]]; then
+  if [[ $dry_run -eq 1 ]]; then
+    log "[DRY RUN] Would push staging branch and open PR to $default_branch"
+  else
+    log "Pushing staging branch"
+    git push -u origin "$staging_branch"
+    log "Creating PR $staging_branch -> $default_branch"
     gh pr create \
       --repo "$repo" \
       --base "$default_branch" \
