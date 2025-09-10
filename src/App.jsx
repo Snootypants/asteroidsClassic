@@ -34,6 +34,7 @@ function App() {
   });
   // Layout state for responsive HUD placement
   const [layout, setLayout] = useState({ minimapBottom: -90 });
+  const [bulletCount, setBulletCount] = useState(0);
 
   // Generate stars with bell curve distribution
   const generateStarfield = useCallback(() => {
@@ -160,6 +161,7 @@ function App() {
     lastShotTimeRef.current = 0;
     shipRef.current = new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
     bulletsRef.current = [];
+    setBulletCount(0);
     
     // Reset camera
     const camera = cameraRef.current;
@@ -186,6 +188,7 @@ function App() {
     if (ship && gameStartedRef.current && !gameOverRef.current) {
       if (bypassLimit || bulletsRef.current.length < MAX_BULLETS) {
         bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
+        setBulletCount(bulletsRef.current.length);
       }
     }
   }, []);
@@ -252,13 +255,19 @@ function App() {
       wrapPosition(bullet); // World wrapping
     });
     bulletsRef.current = bulletsRef.current.filter((bullet) => !bullet.isExpired());
+    setBulletCount(bulletsRef.current.length);
 
     // Unified, smooth firing cadence for Space or LMB hold
     const currentTime = Date.now();
     const isFiring = keys.Space || isMouseDownRef.current;
-    if (isFiring && currentTime - lastShotTimeRef.current >= BULLET_FIRE_RATE) {
+    if (
+      isFiring &&
+      currentTime - lastShotTimeRef.current >= BULLET_FIRE_RATE &&
+      bulletsRef.current.length < MAX_BULLETS
+    ) {
       bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
       lastShotTimeRef.current = currentTime;
+      setBulletCount(bulletsRef.current.length);
     }
 
     // Collisions
@@ -589,12 +598,13 @@ function App() {
           fontWeight: 'bold',
           color: 'white'
         }}>
-          <div>Score: {uiState.score}</div>
-          <div>Lives: {uiState.lives}</div>
-        </div>
+        <div>Score: {uiState.score}</div>
+        <div>Lives: {uiState.lives}</div>
       </div>
-      <div className="hud-container">
-        <div className="hud-right">
+      <div data-testid="bullet-count" style={{ display: 'none' }}>{bulletCount}</div>
+    </div>
+    <div className="hud-container">
+      <div className="hud-right">
           {uiState.gameOver && <div className="game-over">Game Over</div>}
           {uiState.gameStarted && uiState.gameOver && (
             <button onClick={startGame} className="game-button">New Game</button>
