@@ -139,7 +139,7 @@ function App() {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('wheel', handleWheel, { passive: true });
+    document.addEventListener('wheel', handleWheel);
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
