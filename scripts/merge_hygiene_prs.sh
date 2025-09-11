@@ -21,6 +21,8 @@ use_staging=0
 staging_branch_override=""
 assume_yes=0
 skip_conflicts=0
+skip_tests=0
+ignore_test_failures=0
 repo=""
 limit=100
 include_labels=()
@@ -51,6 +53,8 @@ while [[ $# -gt 0 ]]; do
     --yes) assume_yes=1; shift ;;
     --staging-branch) staging_branch_override="$2"; use_staging=1; shift 2 ;;
     --skip-conflicts) skip_conflicts=1; shift ;;
+    --skip-tests) skip_tests=1; shift ;;
+    --ignore-test-failures) ignore_test_failures=1; shift ;;
     --repo) repo="$2"; shift 2 ;;
     --limit) limit="$2"; shift 2 ;;
     --label) include_labels+=("$2"); shift 2 ;;
@@ -222,10 +226,24 @@ run_ci_local() {
   if jq -e '.scripts.build? != null' package.json >/dev/null 2>&1; then
     log "Running build"; pm_script build; fi
   if jq -e '.scripts.test? != null' package.json >/dev/null 2>&1; then
-    if jq -e '.scripts["test:ci"]? != null' package.json >/dev/null 2>&1; then
-      log "Running tests (ci)"; pm_script test:ci
+    if [[ $skip_tests -eq 1 ]]; then
+      log "Skipping tests (--skip-tests)"
     else
-      log "Running tests"; CI=1 pm_script test
+      if jq -e '.scripts["test:ci"]? != null' package.json >/dev/null 2>&1; then
+        log "Running tests (ci)"
+        if [[ $ignore_test_failures -eq 1 ]]; then
+          set +e; pm_script test:ci; rc=$?; set -e; if [[ $rc -ne 0 ]]; then log "Tests failed but continuing (--ignore-test-failures)"; fi
+        else
+          pm_script test:ci
+        fi
+      else
+        log "Running tests"
+        if [[ $ignore_test_failures -eq 1 ]]; then
+          set +e; CI=1 pm_script test; rc=$?; set -e; if [[ $rc -ne 0 ]]; then log "Tests failed but continuing (--ignore-test-failures)"; fi
+        else
+          CI=1 pm_script test
+        fi
+      fi
     fi
   fi
 }
