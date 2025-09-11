@@ -26,6 +26,8 @@ function App() {
   const starsRef = useRef([]);
   const mousePositionRef = useRef({ x: 0, y: 0 });
   const isMouseDownRef = useRef(false);
+  const canvasWidthRef = useRef(CANVAS_WIDTH);
+  const canvasHeightRef = useRef(CANVAS_HEIGHT);
   // Simplified firing: handled in the main update loop via a single timer
   const [uiState, setUiState] = useState({
     score: 0,
@@ -236,8 +238,8 @@ function App() {
     wrapPosition(ship); // World wrapping
 
     // Update camera to follow ship
-    const canvasWidth = window.currentCanvasWidth || CANVAS_WIDTH;
-    const canvasHeight = window.currentCanvasHeight || CANVAS_HEIGHT;
+    const canvasWidth = canvasWidthRef.current || CANVAS_WIDTH;
+    const canvasHeight = canvasHeightRef.current || CANVAS_HEIGHT;
     camera.followShip(ship.x, ship.y, canvasWidth, canvasHeight);
 
     // Update asteroids
@@ -316,8 +318,8 @@ function App() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const canvasWidth = window.currentCanvasWidth || CANVAS_WIDTH;
-    const canvasHeight = window.currentCanvasHeight || CANVAS_HEIGHT;
+    const canvasWidth = canvasWidthRef.current || CANVAS_WIDTH;
+    const canvasHeight = canvasHeightRef.current || CANVAS_HEIGHT;
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
     const camera = cameraRef.current;
@@ -524,8 +526,8 @@ function App() {
       const updatedCanvasHeight = playHeight - 4;
       
       // Store current canvas dimensions for use in rendering
-      window.currentCanvasWidth = updatedCanvasWidth;
-      window.currentCanvasHeight = updatedCanvasHeight;
+      canvasWidthRef.current = updatedCanvasWidth;
+      canvasHeightRef.current = updatedCanvasHeight;
       
       // Debug logging
       if (import.meta.env.DEV) {
