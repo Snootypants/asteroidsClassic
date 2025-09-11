@@ -1,46 +1,74 @@
 # Asteroids Game
 
-A modern recreation of the classic Asteroids arcade game built with React and HTML5 Canvas.
+A modern, responsive take on the classic Asteroids built with React + HTML5 Canvas.
 
-## Features
+## Highlights (v0.1.0 – stable base)
 
-- **Mouse + Keyboard Controls**: Ship aims at mouse cursor, W/S keys for forward/backward thrust
-- **Crosshair Aiming**: Visible crosshair shows exact aiming point
-- **Dual Shooting Modes**: Single click for individual shots, hold for continuous firing (4 shots/sec)
-- **Classic Physics**: Momentum-based movement with smooth friction
-- **Dynamic Asteroid Splitting**: Large asteroids break into smaller pieces when shot
-- **Starfield Background**: Randomly generated stars with varying brightness
-- **Pointer Lock Integration**: Click canvas to capture mouse, ESC to release and pause
-- **Professional UI**: Clean title screen, pause overlay, score tracking
+- Smooth aiming without pointer lock: last screen mouse position is re‑projected to world every frame (no crosshair drift).
+- Even firing cadence: single fire‑rate constant; click = instant shot, hold/Space = steady cadence capped by `MAX_BULLETS`.
+- Tuned speeds: faster bullets, slightly slower ship for clear projectile lead.
+- Big world: 6000×5500 with an aspect‑correct minimap (one clean border). Asteroids are visible red dots; viewport box is softly dimmed.
+- HUD: Score/Lives aligned under the play area, to the left of the minimap; layout remains aligned across resizes.
+- Starfield: dense (~2000) with parallax and +20% perceived brightness.
+- Tests: 7/7 passing (collision, asteroid behavior, bullet firing limits). Vite prod build succeeds.
 
 ## Controls
 
-- **Mouse**: Aim the ship by moving the cursor
-- **Click Canvas**: Capture mouse pointer and start/resume game  
-- **Left Click**: Shoot (single shot or hold for continuous)
-- **W Key**: Forward thrust
-- **S Key**: Brake (slow down)
-- **ESC Key**: Pause game and release mouse
+- Mouse: aim the ship by moving the cursor
+- Left click: fire (click = single, hold = continuous)
+- W: thrust forward
+- S: brake (no reverse)
+- ESC: pause
+
+Pointer lock is not required and is disabled by default.
 
 ## Getting Started
 
 ```bash
-# Install dependencies
+# Install dependencies (use your preferred package manager)
 npm install
 
 # Start development server
 npm run dev
 
+# Run tests
+npm test
+
 # Build for production
 npm run build
 ```
 
-## Development
+## Tuning (src/utils/constants.js)
 
-The game is built using:
-- **React** with hooks for state management
-- **HTML5 Canvas** for rendering
-- **Vite** for fast development and building
-- **Modular Architecture** with separate classes for game objects
+- `FIRE_RATE_MS` — fire cadence for Space/LMB hold (default: 250ms)
+- `BULLET_SPEED` — bullet velocity (default: 20)
+- `SHIP_SPEED` — ship acceleration per tick (default: 0.12)
+- `WORLD_WIDTH` / `WORLD_HEIGHT` — world size (default: 6000×5500)
+- `STAR_COUNT` — base star density (default: 2000)
+- `MINIMAP_*` — sizing is computed by world aspect; border is CSS
 
-All game configuration values are centralized in `src/utils/constants.js` for easy tuning.
+After changing constants, just refresh — no rebuild needed in dev.
+
+## Project Structure
+
+- `src/App.jsx` — main loop, input, rendering, layout, UI
+- `src/components/` — `Ship`, `Asteroid`, `Bullet`, `Minimap`
+- `src/utils/` — physics, camera, constants
+- `src/*.test.*` — unit / interaction tests (Vitest + JSDOM)
+
+## Versioning
+
+- Stable baseline tag: `v0.1.0`
+- Changelog lives in the tag annotation and `IMPROVEMENTS.md`.
+
+## CI & Deploy
+
+- CI: GitHub Actions runs tests and build on every PR and push to `main` (`.github/workflows/ci.yml`).
+- GitHub Pages: pushes to `main` (and Releases) build and publish `dist/` to Pages (`.github/workflows/pages.yml`).
+  - Vite is configured with `base: './'` so assets load when served at `/REPO/`.
+  - Manual trigger is available via “Run workflow”.
+
+## Notes
+
+- The minimap uses the world aspect ratio and canvas dimensions; it draws asteroids as red dots and a softly dimmed viewport rectangle.
+- The crosshair and aiming are recomputed every frame based on the last screen mouse position to avoid edge/idle issues.
