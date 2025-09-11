@@ -23,7 +23,10 @@ export default defineConfig([
       },
     },
     rules: {
+      // Treat constants or intentionally ignored vars as unused exceptions
       'no-unused-vars': ['error', { varsIgnorePattern: '^(_|[A-Z][a-z])' }],
+      // Warn on console usage
+      'no-console': 'warn',
     },
   },
 ])
