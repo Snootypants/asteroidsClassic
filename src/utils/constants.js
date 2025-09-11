@@ -19,7 +19,6 @@ export const STAR_MAX_BRIGHTNESS = 1.0;
 // Game configuration constants
 export const INITIAL_ASTEROID_COUNT = 5;
 export const MAX_BULLETS = 5;
-export const CONTINUOUS_FIRE_RATE = FIRE_RATE_MS; // keep in sync with single source of truth
 export const CROSSHAIR_SIZE = 10;
 export const MOUSE_OFFSET = 50;
 export const SCORE_PER_ASTEROID = 10;
