@@ -37,7 +37,7 @@ html, body {
   transform: translateX(-50%);
   border: 2px solid white;
   background-color: #000;
-  z-index: 10;
+  z-index: 30; /* Above title overlay to avoid dimming on first load */
   /* Size set dynamically via JavaScript */
 }
 

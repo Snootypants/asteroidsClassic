@@ -9,20 +9,20 @@ export class Minimap {
     // Clear and draw background (border is handled by CSS on the canvas)
     ctx.clearRect(0, 0, w, h);
     ctx.save();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
     ctx.fillRect(0, 0, w, h);
 
     // Scale factors
     const scaleX = w / WORLD_WIDTH;
     const scaleY = h / WORLD_HEIGHT;
     
-    // Draw asteroids as small gray dots
-    ctx.fillStyle = 'gray';
+    // Draw asteroids as more visible red dots
+    ctx.fillStyle = '#ff3b30';
     asteroids.forEach(asteroid => {
       if (asteroid) {
         const x = asteroid.x * scaleX;
         const y = asteroid.y * scaleY;
-        ctx.fillRect(x - 1, y - 1, 2, 2);
+        ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
       }
     });
     
@@ -53,7 +53,8 @@ export class Minimap {
     const viewW = effectiveViewportWidth * scaleX;
     const viewH = effectiveViewportHeight * scaleY;
     
-    ctx.strokeStyle = 'yellow';
+    // Dimmed viewport rectangle to reduce visual intensity further
+    ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
     ctx.lineWidth = 1;
     ctx.strokeRect(viewX, viewY, viewW, viewH);
     

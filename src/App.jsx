@@ -366,7 +366,8 @@ function App() {
       if (screenPos.x >= -50 && screenPos.x <= canvasWidth + 50 && 
           screenPos.y >= -50 && screenPos.y <= canvasHeight + 50) {
         ctx.save();
-        ctx.globalAlpha = star.brightness;
+        // Boost perceived brightness ~20% while clamping to 1.0
+        ctx.globalAlpha = Math.min(1, star.brightness * 1.2);
         ctx.fillStyle = 'white';
         ctx.fillRect(screenPos.x, screenPos.y, star.size / camera.zoom, star.size / camera.zoom);
         ctx.restore();
