@@ -20,6 +20,7 @@ dry_run=0
 use_staging=0
 staging_branch_override=""
 assume_yes=0
+skip_conflicts=0
 repo=""
 limit=100
 include_labels=()
@@ -49,6 +50,7 @@ while [[ $# -gt 0 ]]; do
     --staging) use_staging=1; shift ;;
     --yes) assume_yes=1; shift ;;
     --staging-branch) staging_branch_override="$2"; use_staging=1; shift 2 ;;
+    --skip-conflicts) skip_conflicts=1; shift ;;
     --repo) repo="$2"; shift 2 ;;
     --limit) limit="$2"; shift 2 ;;
     --label) include_labels+=("$2"); shift 2 ;;
@@ -250,7 +252,13 @@ merge_into_staging() {
   rc=$?
   set -e
   if [[ $rc -ne 0 ]]; then
-    log "Conflict while merging #$num. Resolve manually, then continue."; die "Conflicts detected in staging merge."
+    if [[ $skip_conflicts -eq 1 ]]; then
+      log "Conflict while merging #$num. Aborting merge and skipping due to --skip-conflicts."
+      git merge --abort || true
+      return 0
+    else
+      log "Conflict while merging #$num. Resolve manually, then continue."; die "Conflicts detected in staging merge."
+    fi
   fi
   if [[ -f package.json ]]; then run_ci_local "PR #$num"; else log "No package.json; skipping JS steps."; fi
 }
