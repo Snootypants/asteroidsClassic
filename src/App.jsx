@@ -11,6 +11,7 @@ import './App.css';
 function App() {
   const canvasRef = useRef(null);
   const minimapCanvasRef = useRef(null);
+  const playAreaRef = useRef(null);
   const shipRef = useRef(new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2));
   const cameraRef = useRef(new Camera());
   const asteroidsRef = useRef([]);
@@ -486,8 +487,8 @@ function App() {
         minimapWidth = Math.round(minimapHeight / worldAspect);
       }
       
-      // Apply styles to play area
-      const playArea = document.querySelector('.play-area');
+      // Apply styles to play area via ref
+      const playArea = playAreaRef.current;
       if (playArea) {
         playArea.style.left = `${playX}px`;
         playArea.style.top = `${playY}px`;
@@ -559,7 +560,7 @@ function App() {
 
   return (
     <div className="app">
-      <div className="play-area">
+      <div className="play-area" ref={playAreaRef}>
         <canvas 
           ref={canvasRef} 
           width={1200} 
