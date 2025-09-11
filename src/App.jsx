@@ -349,16 +349,8 @@ function App() {
       ctx.save();
       ctx.translate(screenPos.x, screenPos.y);
       ctx.scale(1/camera.zoom, 1/camera.zoom);
-      ctx.rotate(shipRef.current.angle);
-      // Draw ship triangle
-      const size = shipRef.current.size;
-      ctx.beginPath();
-      ctx.moveTo(size, 0);
-      ctx.lineTo(-size / 2, -size / 2);
-      ctx.lineTo(-size / 2, size / 2);
-      ctx.closePath();
-      ctx.strokeStyle = 'white';
-      ctx.stroke();
+      ctx.translate(-shipRef.current.x, -shipRef.current.y);
+      shipRef.current.draw(ctx);
       ctx.restore();
     }
     
@@ -380,10 +372,12 @@ function App() {
     bulletsRef.current.forEach((bullet) => {
       if (bullet && camera.isVisible(bullet.x, bullet.y, bullet.size, canvasWidth, canvasHeight)) {
         const screenPos = camera.worldToScreen(bullet.x, bullet.y, canvasWidth, canvasHeight);
-        ctx.beginPath();
-        ctx.arc(screenPos.x, screenPos.y, bullet.size / camera.zoom, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
-        ctx.fill();
+        ctx.save();
+        ctx.translate(screenPos.x, screenPos.y);
+        ctx.scale(1/camera.zoom, 1/camera.zoom);
+        ctx.translate(-bullet.x, -bullet.y);
+        bullet.draw(ctx);
+        ctx.restore();
       }
     });
 
