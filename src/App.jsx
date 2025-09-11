@@ -540,15 +540,13 @@ function App() {
       }
     };
 
-    // Initial layout calculation with a small delay to ensure DOM is ready
-    const timeoutId = setTimeout(updateGameLayout, 10);
+    // Perform initial layout calculation and set up listeners
     updateGameLayout();
-    
+
     window.addEventListener('resize', updateGameLayout);
     window.addEventListener('orientationchange', updateGameLayout);
-    
+
     return () => {
-      clearTimeout(timeoutId);
       window.removeEventListener('resize', updateGameLayout);
       window.removeEventListener('orientationchange', updateGameLayout);
     };
