@@ -52,6 +52,9 @@ while [[ $# -gt 0 ]]; do
     --staging) use_staging=1; shift ;;
     --yes) assume_yes=1; shift ;;
     --staging-branch) staging_branch_override="$2"; use_staging=1; shift 2 ;;
+    --skip-conflicts) skip_conflicts=1; shift ;;
+    --skip-tests) skip_tests=1; shift ;;
+    --ignore-test-failures) ignore_test_failures=1; shift ;;
     --repo) repo="$2"; shift 2 ;;
     --limit) limit="$2"; shift 2 ;;
     --label) include_labels+=("$2"); shift 2 ;;
