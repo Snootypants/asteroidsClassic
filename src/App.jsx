@@ -3,7 +3,7 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CONTINUOUS_FIRE_RATE, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, MINIMAP_WIDTH, MINIMAP_HEIGHT, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX } from './utils/constants.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import './App.css';
@@ -11,6 +11,7 @@ import './App.css';
 function App() {
   const canvasRef = useRef(null);
   const minimapCanvasRef = useRef(null);
+  const playAreaRef = useRef(null);
   const shipRef = useRef(new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2));
   const cameraRef = useRef(new Camera());
   const asteroidsRef = useRef([]);
@@ -25,6 +26,8 @@ function App() {
   const starsRef = useRef([]);
   const mousePositionRef = useRef({ x: 0, y: 0 });
   const isMouseDownRef = useRef(false);
+  const canvasWidthRef = useRef(CANVAS_WIDTH);
+  const canvasHeightRef = useRef(CANVAS_HEIGHT);
   // Simplified firing: handled in the main update loop via a single timer
   const [uiState, setUiState] = useState({
     score: 0,
@@ -34,6 +37,7 @@ function App() {
   });
   // Layout state for responsive HUD placement
   const [layout, setLayout] = useState({ minimapBottom: -90 });
+  const [bulletCount, setBulletCount] = useState(0);
 
   // Generate stars with bell curve distribution
   const generateStarfield = useCallback(() => {
@@ -82,11 +86,10 @@ function App() {
   // Handle pointer lock and mouse/keyboard input
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (['KeyA', 'KeyD', 'KeyW', 'KeyS', 'Space', 'Escape'].includes(e.code)) {
+      if (['KeyW', 'KeyS', 'Space', 'Escape'].includes(e.code)) {
         e.preventDefault();
       }
-      
-      
+
       keysRef.current[e.code] = true;
     };
     
@@ -139,7 +142,7 @@ function App() {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('wheel', handleWheel, { passive: true });
+    document.addEventListener('wheel', handleWheel);
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
@@ -160,6 +163,7 @@ function App() {
     lastShotTimeRef.current = 0;
     shipRef.current = new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
     bulletsRef.current = [];
+    setBulletCount(0);
     
     // Reset camera
     const camera = cameraRef.current;
@@ -186,6 +190,7 @@ function App() {
     if (ship && gameStartedRef.current && !gameOverRef.current) {
       if (bypassLimit || bulletsRef.current.length < MAX_BULLETS) {
         bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
+        setBulletCount(bulletsRef.current.length);
       }
     }
   }, []);
@@ -236,8 +241,8 @@ function App() {
     wrapPosition(ship); // World wrapping
 
     // Update camera to follow ship
-    const canvasWidth = window.currentCanvasWidth || CANVAS_WIDTH;
-    const canvasHeight = window.currentCanvasHeight || CANVAS_HEIGHT;
+    const canvasWidth = canvasWidthRef.current || CANVAS_WIDTH;
+    const canvasHeight = canvasHeightRef.current || CANVAS_HEIGHT;
     camera.followShip(ship.x, ship.y, canvasWidth, canvasHeight);
 
     // Update asteroids
@@ -252,13 +257,19 @@ function App() {
       wrapPosition(bullet); // World wrapping
     });
     bulletsRef.current = bulletsRef.current.filter((bullet) => !bullet.isExpired());
+    setBulletCount(bulletsRef.current.length);
 
     // Unified, smooth firing cadence for Space or LMB hold
     const currentTime = Date.now();
     const isFiring = keys.Space || isMouseDownRef.current;
-    if (isFiring && currentTime - lastShotTimeRef.current >= BULLET_FIRE_RATE) {
+    if (
+      isFiring &&
+      currentTime - lastShotTimeRef.current >= BULLET_FIRE_RATE &&
+      bulletsRef.current.length < MAX_BULLETS
+    ) {
       bulletsRef.current.push(new Bullet(ship.x, ship.y, ship.angle));
       lastShotTimeRef.current = currentTime;
+      setBulletCount(bulletsRef.current.length);
     }
 
     // Collisions
@@ -309,6 +320,7 @@ function App() {
     const minimapCanvas = minimapCanvasRef.current;
     if (!minimapCanvas) return;
     const ctx = minimapCanvas.getContext('2d');
+    if (!ctx) return; // jsdom/test environment safeguard
     Minimap.draw(ctx, shipRef.current, asteroidsRef.current, cameraRef.current);
   }, []);
 
@@ -316,8 +328,9 @@ function App() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const canvasWidth = window.currentCanvasWidth || CANVAS_WIDTH;
-    const canvasHeight = window.currentCanvasHeight || CANVAS_HEIGHT;
+    if (!ctx) return; // jsdom/test environment safeguard
+    const canvasWidth = canvasWidthRef.current || CANVAS_WIDTH;
+    const canvasHeight = canvasHeightRef.current || CANVAS_HEIGHT;
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
     const camera = cameraRef.current;
@@ -347,16 +360,8 @@ function App() {
       ctx.save();
       ctx.translate(screenPos.x, screenPos.y);
       ctx.scale(1/camera.zoom, 1/camera.zoom);
-      ctx.rotate(shipRef.current.angle);
-      // Draw ship triangle
-      const size = shipRef.current.size;
-      ctx.beginPath();
-      ctx.moveTo(size, 0);
-      ctx.lineTo(-size / 2, -size / 2);
-      ctx.lineTo(-size / 2, size / 2);
-      ctx.closePath();
-      ctx.strokeStyle = 'white';
-      ctx.stroke();
+      ctx.translate(-shipRef.current.x, -shipRef.current.y);
+      shipRef.current.draw(ctx);
       ctx.restore();
     }
     
@@ -378,10 +383,12 @@ function App() {
     bulletsRef.current.forEach((bullet) => {
       if (bullet && camera.isVisible(bullet.x, bullet.y, bullet.size, canvasWidth, canvasHeight)) {
         const screenPos = camera.worldToScreen(bullet.x, bullet.y, canvasWidth, canvasHeight);
-        ctx.beginPath();
-        ctx.arc(screenPos.x, screenPos.y, bullet.size / camera.zoom, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
-        ctx.fill();
+        ctx.save();
+        ctx.translate(screenPos.x, screenPos.y);
+        ctx.scale(1/camera.zoom, 1/camera.zoom);
+        ctx.translate(-bullet.x, -bullet.y);
+        bullet.draw(ctx);
+        ctx.restore();
       }
     });
 
@@ -487,8 +494,8 @@ function App() {
         minimapWidth = Math.round(minimapHeight / worldAspect);
       }
       
-      // Apply styles to play area
-      const playArea = document.querySelector('.play-area');
+      // Apply styles to play area via ref
+      const playArea = playAreaRef.current;
       if (playArea) {
         playArea.style.left = `${playX}px`;
         playArea.style.top = `${playY}px`;
@@ -510,7 +517,9 @@ function App() {
         minimapCanvas.height = minimapHeight;
         minimapCanvas.style.width = `${minimapWidth}px`;
         minimapCanvas.style.height = `${minimapHeight}px`;
-        console.log('Minimap dimensions set:', minimapWidth, minimapHeight);
+        if (import.meta.env.DEV) {
+          console.log('Minimap dimensions set:', minimapWidth, minimapHeight);
+        }
       }
 
       // Keep minimap and stats vertically aligned regardless of window size
@@ -522,33 +531,33 @@ function App() {
       const updatedCanvasHeight = playHeight - 4;
       
       // Store current canvas dimensions for use in rendering
-      window.currentCanvasWidth = updatedCanvasWidth;
-      window.currentCanvasHeight = updatedCanvasHeight;
+      canvasWidthRef.current = updatedCanvasWidth;
+      canvasHeightRef.current = updatedCanvasHeight;
       
       // Debug logging
-      console.log('Layout calc:', {
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        availableWidth,
-        availableHeight,
-        playWidth,
-        playHeight,
-        playX,
-        playY,
-        minimapWidth,
-        minimapHeight
-      });
+      if (import.meta.env.DEV) {
+        console.log('Layout calc:', {
+          windowWidth: window.innerWidth,
+          windowHeight: window.innerHeight,
+          availableWidth,
+          availableHeight,
+          playWidth,
+          playHeight,
+          playX,
+          playY,
+          minimapWidth,
+          minimapHeight
+        });
+      }
     };
 
-    // Initial layout calculation with a small delay to ensure DOM is ready
-    const timeoutId = setTimeout(updateGameLayout, 10);
+    // Perform initial layout calculation and set up listeners
     updateGameLayout();
-    
+
     window.addEventListener('resize', updateGameLayout);
     window.addEventListener('orientationchange', updateGameLayout);
-    
+
     return () => {
-      clearTimeout(timeoutId);
       window.removeEventListener('resize', updateGameLayout);
       window.removeEventListener('orientationchange', updateGameLayout);
     };
@@ -556,13 +565,15 @@ function App() {
 
   return (
     <div className="app">
-      <div className="play-area">
+      <div className="play-area" ref={playAreaRef}>
         <canvas 
           ref={canvasRef} 
           width={1200} 
           height={900} 
           onClick={handleCanvasClick}
           className="game-canvas"
+          role="img"
+          aria-label="Asteroids play area"
         />
         {!uiState.gameStarted && (
           <div className="title-overlay">
@@ -589,12 +600,13 @@ function App() {
           fontWeight: 'bold',
           color: 'white'
         }}>
-          <div>Score: {uiState.score}</div>
-          <div>Lives: {uiState.lives}</div>
-        </div>
+        <div>Score: {uiState.score}</div>
+        <div>Lives: {uiState.lives}</div>
       </div>
-      <div className="hud-container">
-        <div className="hud-right">
+      <div data-testid="bullet-count" style={{ display: 'none' }}>{bulletCount}</div>
+    </div>
+    <div className="hud-container">
+      <div className="hud-right">
           {uiState.gameOver && <div className="game-over">Game Over</div>}
           {uiState.gameStarted && uiState.gameOver && (
             <button onClick={startGame} className="game-button">New Game</button>

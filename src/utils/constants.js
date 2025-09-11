@@ -4,7 +4,7 @@ export const CANVAS_HEIGHT = 900;
 export const SHIP_SIZE = 10;
 export const SHIP_SPEED = 0.12; // reduced for lower max ship speed
 // One place to configure firing cadence (also used for hold fire)
-export const FIRE_RATE_MS = 250; // 4 shots per second
+const FIRE_RATE_MS = 250; // 4 shots per second
 export const BULLET_FIRE_RATE = FIRE_RATE_MS; // backwards compatibility
 export const BULLET_SPEED = 20; // slightly faster bullets
 export const BULLET_LIFETIME = 100; // frames
@@ -12,6 +12,9 @@ export const ASTEROID_SPEED = 2;
 export const ASTEROID_SIZE_LARGE = 40;
 export const ASTEROID_SIZE_MEDIUM = 20;
 export const ASTEROID_SIZE_SMALL = 10;
+export const ASTEROID_SPLIT_SPEED_VARIANCE = 0.4; // speed scaling range when splitting
+export const ASTEROID_ROTATION_VARIANCE = 0.1; // rotation speed range
+export const ASTEROID_POINT_RANGE = 4; // additional points added to base shape (8-11)
 export const STAR_COUNT = 2000; // Increased star density
 export const STAR_MIN_BRIGHTNESS = 0.2;
 export const STAR_MAX_BRIGHTNESS = 1.0;
@@ -19,7 +22,6 @@ export const STAR_MAX_BRIGHTNESS = 1.0;
 // Game configuration constants
 export const INITIAL_ASTEROID_COUNT = 5;
 export const MAX_BULLETS = 5;
-export const CONTINUOUS_FIRE_RATE = FIRE_RATE_MS; // keep in sync with single source of truth
 export const CROSSHAIR_SIZE = 10;
 export const MOUSE_OFFSET = 50;
 export const SCORE_PER_ASTEROID = 10;
@@ -44,10 +46,6 @@ export const ZOOM_SPEED = 0.1;
 
 // Bullet range (twice viewport width)
 export const BULLET_RANGE = VIEWPORT_WIDTH * 2;
-
-// Minimap
-export const MINIMAP_WIDTH = 160;
-export const MINIMAP_HEIGHT = 120;
 
 // Ship physics constants
 export const SHIP_FRICTION = 0.99;

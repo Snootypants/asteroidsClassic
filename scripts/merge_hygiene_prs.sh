@@ -60,6 +60,9 @@ while [[ $# -gt 0 ]]; do
     --label) include_labels+=("$2"); shift 2 ;;
     --exclude-label) exclude_labels+=("$2"); shift 2 ;;
     --author) author_filter="$2"; shift 2 ;;
+    --skip-conflicts) skip_conflicts=1; shift ;;
+    --skip-tests) skip_tests=1; shift ;;
+    --ignore-test-failures) ignore_test_failures=1; shift ;;
     -h|--help) print_help; exit 0 ;;
     *) die "Unknown arg: $1" ;;
   esac
