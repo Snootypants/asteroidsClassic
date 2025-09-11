@@ -1,5 +1,27 @@
 # Asteroids Game - Code Quality & UI/UX Improvements
 
+## Stable Checkpoint (2025-09-11)
+
+This checkpoint captures the current, tested baseline:
+
+- Smooth aiming without pointer lock: last screen mouse is reprojected to world every frame; no more crosshair drift when the camera moves.
+- Even firing cadence: single source of truth `FIRE_RATE_MS`; click fires instantly, hold/Space fires at a steady rate capped by `MAX_BULLETS`.
+- Bullet/ship speeds tuned: faster bullets, slightly slower ship for clear projectile lead.
+- Big world with correct minimap shape: world `6000x5500`; minimap sized by world aspect and uses canvas dimensions (no double borders).
+- HUD: Score/Lives placed to the left of the minimap and stay aligned under the play area across resizes.
+- Starfield: increased density (~2000) with parallax and probabilistic brightness distribution.
+- Tests: added unit/interaction tests (collision, asteroid, bullet limits); canvas is test-friendly (a11y role + context guards). All tests pass.
+- Build: vite production build succeeds.
+
+Key files since the checkpoint:
+- `src/App.jsx` (input/aim, firing cadence, layout, tests support)
+- `src/components/Minimap.js` (uses canvas size; world-aspect minimap)
+- `src/utils/constants.js` (world size, stars, speeds, fire rate)
+- `src/App.css` (layout/HUD basics)
+- Tests in `src/*.test.*`
+
+Use this as the jump‑off baseline for future features (pointer-lock toggle, difficulty, polish).
+
 ## Summary of Changes
 
 This document summarizes the comprehensive improvements made to the asteroids game, addressing both critical UI/UX issues and extensive code quality problems identified in the audit.
