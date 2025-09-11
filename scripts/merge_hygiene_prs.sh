@@ -18,6 +18,7 @@ set -euo pipefail
 
 dry_run=0
 use_staging=0
+staging_branch_override=""
 assume_yes=0
 repo=""
 limit=100
@@ -47,6 +48,7 @@ while [[ $# -gt 0 ]]; do
     --dry-run) dry_run=1; shift ;;
     --staging) use_staging=1; shift ;;
     --yes) assume_yes=1; shift ;;
+    --staging-branch) staging_branch_override="$2"; use_staging=1; shift 2 ;;
     --repo) repo="$2"; shift 2 ;;
     --limit) limit="$2"; shift 2 ;;
     --label) include_labels+=("$2"); shift 2 ;;
@@ -191,13 +193,20 @@ done
 if ! confirm "Proceed with this order"; then log "Aborted."; exit 1; fi
 
 ts="$(date +%Y%m%d%H%M)"
-staging_branch="hygiene-integration-$ts"
+staging_branch=${staging_branch_override:-"hygiene-integration-$ts"}
 if [[ $use_staging -eq 1 ]]; then
   if [[ $dry_run -eq 1 ]]; then
     log "[DRY RUN] Would create/refresh staging branch: $staging_branch"
   else
-    log "Creating/refreshing staging branch: $staging_branch"
-    git checkout -B "$staging_branch" "origin/$default_branch"
+    if git show-ref --verify --quiet "refs/heads/$staging_branch"; then
+      log "Using existing staging branch: $staging_branch"
+      git checkout "$staging_branch"
+      git fetch origin "$default_branch"
+      # Do not reset existing staging; keep accumulated merges
+    else
+      log "Creating staging branch: $staging_branch"
+      git checkout -B "$staging_branch" "origin/$default_branch"
+    fi
   fi
 fi
 
