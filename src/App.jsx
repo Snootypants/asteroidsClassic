@@ -320,6 +320,7 @@ function App() {
     const minimapCanvas = minimapCanvasRef.current;
     if (!minimapCanvas) return;
     const ctx = minimapCanvas.getContext('2d');
+    if (!ctx) return; // jsdom/test environment safeguard
     Minimap.draw(ctx, shipRef.current, asteroidsRef.current, cameraRef.current);
   }, []);
 
@@ -327,6 +328,7 @@ function App() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return; // jsdom/test environment safeguard
     const canvasWidth = canvasWidthRef.current || CANVAS_WIDTH;
     const canvasHeight = canvasHeightRef.current || CANVAS_HEIGHT;
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -570,6 +572,8 @@ function App() {
           height={900} 
           onClick={handleCanvasClick}
           className="game-canvas"
+          role="img"
+          aria-label="Asteroids play area"
         />
         {!uiState.gameStarted && (
           <div className="title-overlay">
