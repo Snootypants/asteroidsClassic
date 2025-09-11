@@ -25,6 +25,9 @@ function App() {
   const lastShotTimeRef = useRef(0);
   const starsRef = useRef([]);
   const mousePositionRef = useRef({ x: 0, y: 0 });
+  // Track the last known mouse position in SCREEN coordinates so we can
+  // re-project it into world space every frame even when the mouse is idle
+  const mouseScreenRef = useRef({ x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 });
   const isMouseDownRef = useRef(false);
   const canvasWidthRef = useRef(CANVAS_WIDTH);
   const canvasHeightRef = useRef(CANVAS_HEIGHT);
@@ -107,6 +110,9 @@ function App() {
         // Get mouse position relative to canvas
         const canvasX = e.clientX - rect.left;
         const canvasY = e.clientY - rect.top;
+        // Persist screen-space position for idle reprojection
+        mouseScreenRef.current.x = canvasX;
+        mouseScreenRef.current.y = canvasY;
         
         // Convert canvas coordinates to world coordinates
         const worldPos = camera.screenToWorld(canvasX, canvasY, canvas.width, canvas.height);
@@ -172,11 +178,13 @@ function App() {
     camera.zoom = 1;
     camera.targetZoom = 1;
     
-    // Initialize mouse position ahead of ship based on initial angle (0)
-    mousePositionRef.current = { 
-      x: WORLD_WIDTH / 2 + MOUSE_OFFSET, 
-      y: WORLD_HEIGHT / 2 
-    };
+    // Initialize crosshair: seed screen position slightly to the right of center
+    const canvas = canvasRef.current;
+    const cw = (canvas?.width) || CANVAS_WIDTH;
+    const ch = (canvas?.height) || CANVAS_HEIGHT;
+    mouseScreenRef.current = { x: cw / 2 + 50, y: ch / 2 };
+    const worldPos = cameraRef.current.screenToWorld(mouseScreenRef.current.x, mouseScreenRef.current.y, cw, ch);
+    mousePositionRef.current = { x: worldPos.x, y: worldPos.y };
     
     // Re-initialize asteroids
     initializeAsteroids();
@@ -213,6 +221,19 @@ function App() {
     // Update ship - aims at crosshair, moves with W/S
     const keys = keysRef.current;
     const ship = shipRef.current;
+    
+    // Reproject last known screen mouse into world space even if mouse is idle.
+    // This prevents the crosshair from becoming stale when the camera moves.
+    const canvasWidth = canvasWidthRef.current || CANVAS_WIDTH;
+    const canvasHeight = canvasHeightRef.current || CANVAS_HEIGHT;
+    const reproj = camera.screenToWorld(
+      mouseScreenRef.current.x,
+      mouseScreenRef.current.y,
+      canvasWidth,
+      canvasHeight
+    );
+    mousePositionRef.current.x = reproj.x;
+    mousePositionRef.current.y = reproj.y;
     const mousePos = mousePositionRef.current;
     
     // Calculate angle to mouse crosshair
@@ -241,8 +262,6 @@ function App() {
     wrapPosition(ship); // World wrapping
 
     // Update camera to follow ship
-    const canvasWidth = canvasWidthRef.current || CANVAS_WIDTH;
-    const canvasHeight = canvasHeightRef.current || CANVAS_HEIGHT;
     camera.followShip(ship.x, ship.y, canvasWidth, canvasHeight);
 
     // Update asteroids
