@@ -134,13 +134,28 @@ function App() {
     
     // Check for stage clear condition
     const totalAsteroids = counts.large + counts.medium + counts.small;
-    if (totalAsteroids === 0 && gameStartedRef.current && !gameOverRef.current && !stageClearedRef.current) {
+    if (
+      totalAsteroids === 0 &&
+      gameStartedRef.current &&
+      !gameOverRef.current &&
+      !stageClearedRef.current &&
+      !hyperSpaceJumpEffectRef.current.active
+    ) {
       stageClearedRef.current = true;
       stageClearEffectRef.current.trigger();
-      // Reset flag after effect completes (about 2 seconds)
+      // After ~1s, trigger hyperspace jump transition to the next stage
       setTimeout(() => {
-        stageClearedRef.current = false;
-      }, 2000);
+        const ship = shipRef.current;
+        if (ship) {
+          hyperSpaceJumpEffectRef.current.trigger(
+            ship.angle,
+            stageRef.current,
+            baseAsteroidCountRef.current,
+            startNewStage
+          );
+          hyperSpaceJumpEffectRef.current.initStarVelocities(starsRef.current);
+        }
+      }, 1000);
     }
   }, []);
 
