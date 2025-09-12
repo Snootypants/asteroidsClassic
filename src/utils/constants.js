@@ -46,6 +46,11 @@ export const STAGE_CLEAR_POP_TIME = 15;     // Time for pop animation
 export const STAGE_CLEAR_HOLD_TIME = 45;    // Time to hold at center
 export const STAGE_CLEAR_FADE_TIME = 20;    // Time to fade out
 
+// HyperSpace Jump effect timings (in frames)  
+export const HYPERSPACE_STREAK_TIME = 60;    // Time for stars to streak
+export const HYPERSPACE_FADE_TIME = 30;      // Time to fade to black
+export const HYPERSPACE_TEXT_TIME = 30;      // Time for text animation
+
 // Star brightness thresholds
 export const STAR_LARGE_THRESHOLD = 0.7;
 export const STAR_MEDIUM_THRESHOLD = 0.4;

@@ -6,6 +6,7 @@ import { checkCollision, wrapPosition } from './utils/collision.js';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX, XP_PER_ASTEROID, XP_LEVEL_BASE, XP_LEVEL_GROWTH, ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL } from './utils/constants.js';
 import { LevelUpEffect } from './effects/LevelUpEffect.js';
 import { StageClearEffect } from './effects/StageClearEffect.js';
+import { HyperSpaceJumpEffect } from './effects/HyperSpaceJumpEffect.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import PauseOverlay from './components/PauseOverlay.jsx';
@@ -29,6 +30,9 @@ function App() {
   const levelRef = useRef(1);
   const levelUpEffectRef = useRef(new LevelUpEffect());
   const stageClearEffectRef = useRef(new StageClearEffect());
+  const hyperSpaceJumpEffectRef = useRef(new HyperSpaceJumpEffect());
+  const stageRef = useRef(1);
+  const baseAsteroidCountRef = useRef(INITIAL_ASTEROID_COUNT);
   const gameOverRef = useRef(false);
   const gameStartedRef = useRef(false);
   const requestRef = useRef();
@@ -85,9 +89,9 @@ function App() {
   }, []);
 
   // Reusable function to initialize asteroids
-  const initializeAsteroids = useCallback(() => {
+  const initializeAsteroids = useCallback((count = INITIAL_ASTEROID_COUNT) => {
     const initialAsteroids = [];
-    for (let i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
+    for (let i = 0; i < count; i++) {
       const x = Math.random() * WORLD_WIDTH;
       const y = Math.random() * WORLD_HEIGHT;
       initialAsteroids.push(new Asteroid(x, y));
@@ -140,6 +144,33 @@ function App() {
     }
   }, []);
 
+  const startNewStage = useCallback((stageNumber, asteroidCount) => {
+    // Reset game state for new stage
+    stageRef.current = stageNumber;
+    baseAsteroidCountRef.current = asteroidCount;
+    
+    // Clear any remaining bullets
+    bulletsRef.current = [];
+    setBulletCount(0);
+    
+    // Reset ship position to center
+    if (shipRef.current) {
+      shipRef.current.x = WORLD_WIDTH / 2;
+      shipRef.current.y = WORLD_HEIGHT / 2;
+      shipRef.current.vx = 0;
+      shipRef.current.vy = 0;
+    }
+    
+    // Spawn new asteroids
+    initializeAsteroids(asteroidCount);
+    
+    // Reset stage cleared flag
+    stageClearedRef.current = false;
+    
+    // Regenerate starfield
+    generateStarfield();
+  }, [initializeAsteroids, generateStarfield]);
+
   // Initialize asteroids and stars
   useEffect(() => {
     initializeAsteroids();
@@ -151,7 +182,7 @@ function App() {
   // Handle pointer lock and mouse/keyboard input
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (['KeyW', 'KeyS', 'Space', 'Escape', 'Tab', 'Digit1', 'Digit2'].includes(e.code)) {
+      if (['KeyW', 'KeyS', 'Space', 'Escape', 'Tab', 'Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
         e.preventDefault();
       }
 
@@ -176,6 +207,18 @@ function App() {
         }
         if (e.code === 'Digit2') {
           stageClearEffectRef.current.trigger();
+        }
+        if (e.code === 'Digit3') {
+          const ship = shipRef.current;
+          if (ship) {
+            hyperSpaceJumpEffectRef.current.trigger(
+              ship.angle,
+              stageRef.current,
+              baseAsteroidCountRef.current,
+              startNewStage
+            );
+            hyperSpaceJumpEffectRef.current.initStarVelocities(starsRef.current);
+          }
         }
       }
     };
@@ -227,6 +270,16 @@ function App() {
       camera.setZoom(camera.targetZoom + zoomDelta);
     };
 
+    const handleCanvasClick = (e) => {
+      if (hyperSpaceJumpEffectRef.current.phase === 'waiting') {
+        hyperSpaceJumpEffectRef.current.startNewStage();
+      }
+    };
+    
+    if (canvasRef.current) {
+      canvasRef.current.addEventListener('click', handleCanvasClick);
+    }
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     document.addEventListener('mousemove', handleMouseMove);
@@ -241,8 +294,11 @@ function App() {
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('wheel', handleWheel);
+      if (canvasRef.current) {
+        canvasRef.current.removeEventListener('click', handleCanvasClick);
+      }
     };
-  }, [triggerLevelUp]);
+  }, [triggerLevelUp, startNewStage]);
 
   const startGame = () => {
     gameStartedRef.current = true;
@@ -257,6 +313,8 @@ function App() {
     bulletsRef.current = [];
     setBulletCount(0);
     stageClearedRef.current = false;
+    stageRef.current = 1;
+    baseAsteroidCountRef.current = INITIAL_ASTEROID_COUNT;
     
     // Reset camera
     const camera = cameraRef.current;
@@ -430,6 +488,8 @@ function App() {
     // Level-up effect update
     levelUpEffectRef.current.update();
     stageClearEffectRef.current.update();
+    hyperSpaceJumpEffectRef.current.update();
+    hyperSpaceJumpEffectRef.current.updateStars(starsRef.current);
     
     // Update asteroid counts for active tracking
     updateAsteroidCounts();
@@ -491,25 +551,29 @@ function App() {
 
     const camera = cameraRef.current;
 
-    // Draw parallax stars first (background)
-    starsRef.current.forEach((star) => {
-      // Calculate parallax position
-      const parallaxX = star.x - camera.x * star.parallax;
-      const parallaxY = star.y - camera.y * star.parallax;
-      
-      const screenPos = camera.worldToScreen(parallaxX, parallaxY, canvasWidth, canvasHeight);
-      
-      // Only draw if visible (with margin for star wrapping)
-      if (screenPos.x >= -50 && screenPos.x <= canvasWidth + 50 && 
-          screenPos.y >= -50 && screenPos.y <= canvasHeight + 50) {
-        ctx.save();
-        // Boost perceived brightness ~20% while clamping to 1.0
-        ctx.globalAlpha = Math.min(1, star.brightness * 1.2);
-        ctx.fillStyle = 'white';
-        ctx.fillRect(screenPos.x, screenPos.y, star.size / camera.zoom, star.size / camera.zoom);
-        ctx.restore();
-      }
-    });
+    // Draw parallax stars (background) - with hyperspace effect support
+    if (hyperSpaceJumpEffectRef.current.active && hyperSpaceJumpEffectRef.current.phase === 'streaking') {
+      hyperSpaceJumpEffectRef.current.drawStars(ctx, starsRef.current, camera, canvasWidth, canvasHeight);
+    } else {
+      starsRef.current.forEach((star) => {
+        // Calculate parallax position
+        const parallaxX = star.x - camera.x * star.parallax;
+        const parallaxY = star.y - camera.y * star.parallax;
+        
+        const screenPos = camera.worldToScreen(parallaxX, parallaxY, canvasWidth, canvasHeight);
+        
+        // Only draw if visible (with margin for star wrapping)
+        if (screenPos.x >= -50 && screenPos.x <= canvasWidth + 50 && 
+            screenPos.y >= -50 && screenPos.y <= canvasHeight + 50) {
+          ctx.save();
+          // Boost perceived brightness ~20% while clamping to 1.0
+          ctx.globalAlpha = Math.min(1, star.brightness * 1.2);
+          ctx.fillStyle = 'white';
+          ctx.fillRect(screenPos.x, screenPos.y, star.size / camera.zoom, star.size / camera.zoom);
+          ctx.restore();
+        }
+      });
+    }
 
     // Draw ship
     if (shipRef.current && camera.isVisible(shipRef.current.x, shipRef.current.y, 50, canvasWidth, canvasHeight)) {
@@ -573,6 +637,7 @@ function App() {
     // Draw level-up effects (overlay)
     levelUpEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
     stageClearEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
+    hyperSpaceJumpEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
   }, [renderMinimap, renderXpBar]);
 
 
