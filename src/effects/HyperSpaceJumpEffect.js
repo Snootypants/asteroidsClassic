@@ -247,10 +247,6 @@ export class HyperSpaceJumpEffect {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       ctx.fillText('click to start', 0, 40);
       
-      ctx.shadowColor = '#00FFFF';
-      ctx.shadowBlur = 30;
-      ctx.fillText(`STAGE ${this.stageNumber}`, 0, -20);
-      
       ctx.restore();
     }
   }
