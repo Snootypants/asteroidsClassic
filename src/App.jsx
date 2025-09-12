@@ -10,6 +10,7 @@ import { HyperSpaceJumpEffect } from './effects/HyperSpaceJumpEffect.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import PauseOverlay from './components/PauseOverlay.jsx';
+import StartOverlay from './components/StartOverlay.jsx';
 import './App.css';
 
 function App() {
@@ -56,7 +57,8 @@ function App() {
     gameOver: false,
     gameStarted: false,
     isPaused: false,
-    testingMode: false
+    testingMode: false,
+    mode: null // 'waves' | 'survival'
   });
   // Layout state for responsive HUD placement
   const [layout, setLayout] = useState({ minimapBottom: -90 });
@@ -366,14 +368,35 @@ function App() {
   // Removed interval-based continuous shooting; handled in update()
 
   const handleCanvasClick = () => {
-    if (!uiState.gameStarted) {
-      startGame();
-    }
+    // Starting is handled by StartOverlay buttons.
+    // Here, we only use clicks for stage transitions or gameplay.
+    if (!uiState.gameStarted) return;
   };
+
+  const handleSelectMode = useCallback((mode) => {
+    setUiState(prev => ({ ...prev, mode }));
+    startGame(); // For now both modes start the same gameplay
+  }, []);
 
   const handleResume = useCallback(() => {
     isPausedRef.current = false;
     setUiState(prev => ({ ...prev, isPaused: false }));
+  }, []);
+
+  const handleExitToMenu = useCallback(() => {
+    // Clear gameplay state and return to start menu
+    isPausedRef.current = false;
+    gameStartedRef.current = false;
+    gameOverRef.current = false;
+    bulletsRef.current = [];
+    asteroidsRef.current = [];
+    setBulletCount(0);
+    // Stop active effects
+    levelUpEffectRef.current.active = false;
+    stageClearEffectRef.current.active = false;
+    hyperSpaceJumpEffectRef.current.active = false;
+    // Reset basic UI
+    setUiState(prev => ({ ...prev, isPaused: false, gameStarted: false }));
   }, []);
 
   const update = useCallback(() => {
@@ -846,10 +869,7 @@ function App() {
         {/* XP Bar above play area */}
         <canvas ref={xpBarCanvasRef} className="xpbar-canvas" />
         {!uiState.gameStarted && (
-          <div className="title-overlay">
-            <div className="title-text">ASTEROIDS</div>
-            <div className="start-instruction">Click to start</div>
-          </div>
+          <StartOverlay onSelect={handleSelectMode} />
         )}
         {uiState.gameStarted && !uiState.gameOver && uiState.isPaused && (
           <PauseOverlay 
@@ -859,6 +879,7 @@ function App() {
             mediumCount={asteroidCountsRef.current.medium}
             smallCount={asteroidCountsRef.current.small}
             onResume={handleResume}
+            onExit={handleExitToMenu}
           />
         )}
         <canvas 

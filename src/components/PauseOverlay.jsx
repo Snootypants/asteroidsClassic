@@ -1,9 +1,9 @@
-export default function PauseOverlay({ xp, lives, largeCount, mediumCount, smallCount, onResume }) {
+export default function PauseOverlay({ xp, lives, largeCount, mediumCount, smallCount, onResume, onExit }) {
   const totalAsteroids = (largeCount || 0) + (mediumCount || 0) + (smallCount || 0);
   
   return (
     <div className="pause-overlay" onClick={onResume}>
-      <div className="pause-card">
+      <div className="pause-card" onClick={(e) => e.stopPropagation()}>
         <div className="pause-title">PAUSED</div>
         <div className="pause-sub">Click or press ESC to resume</div>
         <div className="pause-stats">
@@ -32,6 +32,9 @@ export default function PauseOverlay({ xp, lives, largeCount, mediumCount, small
               <div className="asteroid-label">Small</div>
             </div>
           </div>
+        </div>
+        <div className="pause-actions">
+          <button className="pause-exit-btn" onClick={onExit}>Exit to Start Menu</button>
         </div>
       </div>
     </div>
