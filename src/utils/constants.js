@@ -33,6 +33,19 @@ export const XP_PER_ASTEROID = 18;          // XP granted per asteroid break
 export const XP_LEVEL_BASE = 300;           // XP needed for level 1→2
 export const XP_LEVEL_GROWTH = 1.25;        // Each level requires 25% more XP than previous
 
+// Level-up effects
+export const LEVELUP_PARTICLES = 225;       // +50% bigger burst
+export const LEVELUP_PARTICLE_SPEED = 12;   // +50% faster particles
+export const LEVELUP_PARTICLE_LIFE = 40;    // frames
+export const LEVELUP_FLASH_DECAY = 0.06;    // alpha per frame
+export const LEVELUP_TEXT_TIME = 75;        // frames to show text
+
+// Stage Clear effect timings (in frames)
+export const STAGE_CLEAR_SLIDE_TIME = 30;   // Time to slide in from left
+export const STAGE_CLEAR_POP_TIME = 15;     // Time for pop animation
+export const STAGE_CLEAR_HOLD_TIME = 45;    // Time to hold at center
+export const STAGE_CLEAR_FADE_TIME = 20;    // Time to fade out
+
 // Star brightness thresholds
 export const STAR_LARGE_THRESHOLD = 0.7;
 export const STAR_MEDIUM_THRESHOLD = 0.4;

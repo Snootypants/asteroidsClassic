@@ -5,6 +5,7 @@ import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX, XP_PER_ASTEROID, XP_LEVEL_BASE, XP_LEVEL_GROWTH } from './utils/constants.js';
 import { LevelUpEffect } from './effects/LevelUpEffect.js';
+import { StageClearEffect } from './effects/StageClearEffect.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import PauseOverlay from './components/PauseOverlay.jsx';
@@ -25,6 +26,7 @@ function App() {
   const xpRef = useRef(0);
   const levelRef = useRef(1);
   const levelUpEffectRef = useRef(new LevelUpEffect());
+  const stageClearEffectRef = useRef(new StageClearEffect());
   const gameOverRef = useRef(false);
   const gameStartedRef = useRef(false);
   const requestRef = useRef();
@@ -36,6 +38,7 @@ function App() {
   const mouseScreenRef = useRef({ x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 });
   const isMouseDownRef = useRef(false);
   const isPausedRef = useRef(false);
+  const testingModeRef = useRef(false);
   const canvasWidthRef = useRef(CANVAS_WIDTH);
   const canvasHeightRef = useRef(CANVAS_HEIGHT);
   // Simplified firing: handled in the main update loop via a single timer
@@ -46,7 +49,8 @@ function App() {
     level: 1,
     gameOver: false,
     gameStarted: false,
-    isPaused: false
+    isPaused: false,
+    testingMode: false
   });
   // Layout state for responsive HUD placement
   const [layout, setLayout] = useState({ minimapBottom: -90 });
@@ -124,7 +128,7 @@ function App() {
   // Handle pointer lock and mouse/keyboard input
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (['KeyW', 'KeyS', 'Space', 'Escape', 'KeyG'].includes(e.code)) {
+      if (['KeyW', 'KeyS', 'Space', 'Escape', 'Tab', 'Digit1', 'Digit2'].includes(e.code)) {
         e.preventDefault();
       }
 
@@ -136,8 +140,20 @@ function App() {
         setUiState(prev => ({ ...prev, isPaused: isPausedRef.current }));
       }
       
-      if (e.code === 'KeyG') {
-        triggerLevelUp(levelRef.current);
+      // Toggle testing mode with Tab
+      if (e.code === 'Tab') {
+        testingModeRef.current = !testingModeRef.current;
+        setUiState(prev => ({ ...prev, testingMode: testingModeRef.current }));
+      }
+      
+      // Testing mode effect triggers
+      if (testingModeRef.current && gameStartedRef.current) {
+        if (e.code === 'Digit1') {
+          triggerLevelUp(levelRef.current);
+        }
+        if (e.code === 'Digit2') {
+          stageClearEffectRef.current.trigger();
+        }
       }
     };
     
@@ -389,6 +405,7 @@ function App() {
 
     // Level-up effect update
     levelUpEffectRef.current.update();
+    stageClearEffectRef.current.update();
   }, []);
 
   const renderMinimap = useCallback(() => {
@@ -528,6 +545,7 @@ function App() {
 
     // Draw level-up effects (overlay)
     levelUpEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
+    stageClearEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
   }, [renderMinimap, renderXpBar]);
 
 
@@ -763,6 +781,11 @@ function App() {
           )}
         </div>
       </div>
+      {uiState.testingMode && (
+        <div className="testing-mode-indicator">
+          Testing Mode ON
+        </div>
+      )}
     </div>
   );
 }
