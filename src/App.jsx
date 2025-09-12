@@ -552,7 +552,9 @@ function App() {
     const camera = cameraRef.current;
 
     // Draw parallax stars (background) - with hyperspace effect support
-    if (hyperSpaceJumpEffectRef.current.active && hyperSpaceJumpEffectRef.current.phase === 'streaking') {
+    if (hyperSpaceJumpEffectRef.current.active && 
+        (hyperSpaceJumpEffectRef.current.phase === 'brighten' || 
+         hyperSpaceJumpEffectRef.current.phase === 'streaking')) {
       hyperSpaceJumpEffectRef.current.drawStars(ctx, starsRef.current, camera, canvasWidth, canvasHeight);
     } else {
       starsRef.current.forEach((star) => {
@@ -575,10 +577,16 @@ function App() {
       });
     }
 
-    // Draw ship
+    // Draw ship (with hyperspace fade support)
     if (shipRef.current && camera.isVisible(shipRef.current.x, shipRef.current.y, 50, canvasWidth, canvasHeight)) {
       const screenPos = camera.worldToScreen(shipRef.current.x, shipRef.current.y, canvasWidth, canvasHeight);
       ctx.save();
+      
+      // Apply hyperspace opacity if active
+      if (hyperSpaceJumpEffectRef.current.active) {
+        ctx.globalAlpha = hyperSpaceJumpEffectRef.current.getShipOpacity();
+      }
+      
       ctx.translate(screenPos.x, screenPos.y);
       ctx.scale(1/camera.zoom, 1/camera.zoom);
       ctx.translate(-shipRef.current.x, -shipRef.current.y);
@@ -586,11 +594,16 @@ function App() {
       ctx.restore();
     }
     
-    // Draw asteroids (with culling)
+    // Draw asteroids (with culling and hyperspace fade)
     asteroidsRef.current.forEach((asteroid) => {
       if (asteroid && camera.isVisible(asteroid.x, asteroid.y, asteroid.size, canvasWidth, canvasHeight)) {
         const screenPos = camera.worldToScreen(asteroid.x, asteroid.y, canvasWidth, canvasHeight);
         ctx.save();
+        
+        // Apply hyperspace opacity if active
+        if (hyperSpaceJumpEffectRef.current.active) {
+          ctx.globalAlpha = hyperSpaceJumpEffectRef.current.getAsteroidsOpacity();
+        }
         ctx.translate(screenPos.x, screenPos.y);
         ctx.scale(1/camera.zoom, 1/camera.zoom);
         // Draw asteroid using its draw method

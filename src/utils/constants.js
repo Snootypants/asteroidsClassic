@@ -50,6 +50,8 @@ export const STAGE_CLEAR_FADE_TIME = 20;    // Time to fade out
 export const HYPERSPACE_STREAK_TIME = 60;    // Time for stars to streak
 export const HYPERSPACE_FADE_TIME = 30;      // Time to fade to black
 export const HYPERSPACE_TEXT_TIME = 30;      // Time for text animation
+export const HYPERSPACE_BRIGHTEN_TIME = 20;  // Time to brighten stars
+export const HYPERSPACE_FLASH_TIME = 8;      // Time for white flash
 
 // Star brightness thresholds
 export const STAR_LARGE_THRESHOLD = 0.7;
