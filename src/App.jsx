@@ -4,8 +4,10 @@ import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX, XP_PER_ASTEROID, XP_LEVEL_BASE, XP_LEVEL_GROWTH } from './utils/constants.js';
+import { LevelUpEffect } from './effects/LevelUpEffect.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
+import PauseOverlay from './components/PauseOverlay.jsx';
 import './App.css';
 
 function App() {
@@ -22,6 +24,7 @@ function App() {
   const livesRef = useRef(INITIAL_LIVES);
   const xpRef = useRef(0);
   const levelRef = useRef(1);
+  const levelUpEffectRef = useRef(new LevelUpEffect());
   const gameOverRef = useRef(false);
   const gameStartedRef = useRef(false);
   const requestRef = useRef();
@@ -32,6 +35,7 @@ function App() {
   // re-project it into world space every frame even when the mouse is idle
   const mouseScreenRef = useRef({ x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 });
   const isMouseDownRef = useRef(false);
+  const isPausedRef = useRef(false);
   const canvasWidthRef = useRef(CANVAS_WIDTH);
   const canvasHeightRef = useRef(CANVAS_HEIGHT);
   // Simplified firing: handled in the main update loop via a single timer
@@ -41,7 +45,8 @@ function App() {
     xp: 0,
     level: 1,
     gameOver: false,
-    gameStarted: false
+    gameStarted: false,
+    isPaused: false
   });
   // Layout state for responsive HUD placement
   const [layout, setLayout] = useState({ minimapBottom: -90 });
@@ -86,6 +91,12 @@ function App() {
 
   const xpNeededForNextLevel = useCallback((level) => Math.round(XP_LEVEL_BASE * Math.pow(XP_LEVEL_GROWTH, Math.max(0, level - 1))), []);
 
+  const triggerLevelUp = useCallback((newLevel) => {
+    const ship = shipRef.current;
+    if (!ship) return;
+    levelUpEffectRef.current.trigger(ship.x, ship.y, newLevel);
+  }, []);
+
   const addXp = useCallback((amount) => {
     let newXp = xpRef.current + amount;
     let newLevel = levelRef.current;
@@ -96,8 +107,11 @@ function App() {
       needed = xpNeededForNextLevel(newLevel);
     }
     xpRef.current = newXp;
-    levelRef.current = newLevel;
-  }, [xpNeededForNextLevel]);
+    if (newLevel !== levelRef.current) {
+      levelRef.current = newLevel;
+      triggerLevelUp(newLevel);
+    }
+  }, [xpNeededForNextLevel, triggerLevelUp]);
 
   // Initialize asteroids and stars
   useEffect(() => {
@@ -110,11 +124,21 @@ function App() {
   // Handle pointer lock and mouse/keyboard input
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (['KeyW', 'KeyS', 'Space', 'Escape'].includes(e.code)) {
+      if (['KeyW', 'KeyS', 'Space', 'Escape', 'KeyG'].includes(e.code)) {
         e.preventDefault();
       }
 
       keysRef.current[e.code] = true;
+      
+      // Handle pause toggle with ESC
+      if (e.code === 'Escape' && gameStartedRef.current && !gameOverRef.current) {
+        isPausedRef.current = !isPausedRef.current;
+        setUiState(prev => ({ ...prev, isPaused: isPausedRef.current }));
+      }
+      
+      if (e.code === 'KeyG') {
+        triggerLevelUp(levelRef.current);
+      }
     };
     
     const handleKeyUp = (e) => {
@@ -179,7 +203,7 @@ function App() {
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('wheel', handleWheel);
     };
-  }, []);
+  }, [triggerLevelUp]);
 
   const startGame = () => {
     gameStartedRef.current = true;
@@ -234,8 +258,13 @@ function App() {
     }
   };
 
+  const handleResume = useCallback(() => {
+    isPausedRef.current = false;
+    setUiState(prev => ({ ...prev, isPaused: false }));
+  }, []);
+
   const update = useCallback(() => {
-    if (gameOverRef.current || !gameStartedRef.current) return;
+    if (gameOverRef.current || !gameStartedRef.current || isPausedRef.current) return;
 
     // Update camera zoom
     const camera = cameraRef.current;
@@ -357,6 +386,9 @@ function App() {
     if (shipCollisionIndex >= 0) {
       asteroidsRef.current.splice(shipCollisionIndex, 1);
     }
+
+    // Level-up effect update
+    levelUpEffectRef.current.update();
   }, []);
 
   const renderMinimap = useCallback(() => {
@@ -493,6 +525,9 @@ function App() {
     renderMinimap();
     // Render XP bar
     renderXpBar();
+
+    // Draw level-up effects (overlay)
+    levelUpEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
   }, [renderMinimap, renderXpBar]);
 
 
@@ -677,6 +712,13 @@ function App() {
             <div className="title-text">ASTEROIDS</div>
             <div className="start-instruction">Click to start</div>
           </div>
+        )}
+        {uiState.gameStarted && !uiState.gameOver && uiState.isPaused && (
+          <PauseOverlay 
+            xp={uiState.xp}
+            lives={uiState.lives}
+            onResume={handleResume}
+          />
         )}
         <canvas 
           ref={minimapCanvasRef}
