@@ -3,7 +3,7 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX, XP_PER_ASTEROID, XP_LEVEL_BASE, XP_LEVEL_GROWTH } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX, XP_PER_ASTEROID, XP_LEVEL_BASE, XP_LEVEL_GROWTH, ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL } from './utils/constants.js';
 import { LevelUpEffect } from './effects/LevelUpEffect.js';
 import { StageClearEffect } from './effects/StageClearEffect.js';
 import { Camera } from './utils/camera.js';
@@ -20,6 +20,8 @@ function App() {
   const cameraRef = useRef(new Camera());
   const asteroidsRef = useRef([]);
   const bulletsRef = useRef([]);
+  const asteroidCountsRef = useRef({ large: 0, medium: 0, small: 0 });
+  const stageClearedRef = useRef(false);
   const keysRef = useRef({});
   const scoreRef = useRef(0);
   const livesRef = useRef(INITIAL_LIVES);
@@ -116,6 +118,27 @@ function App() {
       triggerLevelUp(newLevel);
     }
   }, [xpNeededForNextLevel, triggerLevelUp]);
+
+  const updateAsteroidCounts = useCallback(() => {
+    const counts = { large: 0, medium: 0, small: 0 };
+    asteroidsRef.current.forEach(asteroid => {
+      if (asteroid.size === ASTEROID_SIZE_LARGE) counts.large++;
+      else if (asteroid.size === ASTEROID_SIZE_MEDIUM) counts.medium++;
+      else if (asteroid.size === ASTEROID_SIZE_SMALL) counts.small++;
+    });
+    asteroidCountsRef.current = counts;
+    
+    // Check for stage clear condition
+    const totalAsteroids = counts.large + counts.medium + counts.small;
+    if (totalAsteroids === 0 && gameStartedRef.current && !gameOverRef.current && !stageClearedRef.current) {
+      stageClearedRef.current = true;
+      stageClearEffectRef.current.trigger();
+      // Reset flag after effect completes (about 2 seconds)
+      setTimeout(() => {
+        stageClearedRef.current = false;
+      }, 2000);
+    }
+  }, []);
 
   // Initialize asteroids and stars
   useEffect(() => {
@@ -233,6 +256,7 @@ function App() {
     shipRef.current = new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
     bulletsRef.current = [];
     setBulletCount(0);
+    stageClearedRef.current = false;
     
     // Reset camera
     const camera = cameraRef.current;
@@ -406,7 +430,10 @@ function App() {
     // Level-up effect update
     levelUpEffectRef.current.update();
     stageClearEffectRef.current.update();
-  }, []);
+    
+    // Update asteroid counts for active tracking
+    updateAsteroidCounts();
+  }, [updateAsteroidCounts]);
 
   const renderMinimap = useCallback(() => {
     const minimapCanvas = minimapCanvasRef.current;
@@ -735,6 +762,9 @@ function App() {
           <PauseOverlay 
             xp={uiState.xp}
             lives={uiState.lives}
+            largeCount={asteroidCountsRef.current.large}
+            mediumCount={asteroidCountsRef.current.medium}
+            smallCount={asteroidCountsRef.current.small}
             onResume={handleResume}
           />
         )}
