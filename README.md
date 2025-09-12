@@ -49,6 +49,20 @@ npm run build
 
 After changing constants, just refresh — no rebuild needed in dev.
 
+## Assets
+
+Static assets live under `public/assets/` and are served at `${import.meta.env.BASE_URL}assets/...`.
+
+Examples:
+
+```jsx
+// In a React component
+const shipUrl = `${import.meta.env.BASE_URL}assets/ship/ship1.png`;
+<img src={shipUrl} alt="Ship" />
+```
+
+Folders are preserved (e.g., `assets/ship/`, `assets/boss/`) so you can address them predictably.
+
 ## Project Structure
 
 - `src/App.jsx` — main loop, input, rendering, layout, UI

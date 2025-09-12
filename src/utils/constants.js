@@ -28,6 +28,11 @@ export const SCORE_PER_ASTEROID = 10;
 export const INITIAL_LIVES = 3;
 export const BULLET_SIZE = 2;
 
+// Progression / XP
+export const XP_PER_ASTEROID = 18;          // XP granted per asteroid break
+export const XP_LEVEL_BASE = 300;           // XP needed for level 1→2
+export const XP_LEVEL_GROWTH = 1.25;        // Each level requires 25% more XP than previous
+
 // Star brightness thresholds
 export const STAR_LARGE_THRESHOLD = 0.7;
 export const STAR_MEDIUM_THRESHOLD = 0.4;

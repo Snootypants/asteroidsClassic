@@ -3,7 +3,7 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX, XP_PER_ASTEROID, XP_LEVEL_BASE, XP_LEVEL_GROWTH } from './utils/constants.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import './App.css';
@@ -11,6 +11,7 @@ import './App.css';
 function App() {
   const canvasRef = useRef(null);
   const minimapCanvasRef = useRef(null);
+  const xpBarCanvasRef = useRef(null);
   const playAreaRef = useRef(null);
   const shipRef = useRef(new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2));
   const cameraRef = useRef(new Camera());
@@ -19,6 +20,8 @@ function App() {
   const keysRef = useRef({});
   const scoreRef = useRef(0);
   const livesRef = useRef(INITIAL_LIVES);
+  const xpRef = useRef(0);
+  const levelRef = useRef(1);
   const gameOverRef = useRef(false);
   const gameStartedRef = useRef(false);
   const requestRef = useRef();
@@ -35,11 +38,14 @@ function App() {
   const [uiState, setUiState] = useState({
     score: 0,
     lives: INITIAL_LIVES,
+    xp: 0,
+    level: 1,
     gameOver: false,
     gameStarted: false
   });
   // Layout state for responsive HUD placement
   const [layout, setLayout] = useState({ minimapBottom: -90 });
+  const [metaLayout, setMetaLayout] = useState({ playWidth: CANVAS_WIDTH, minimapWidth: 160, leftHudX: 0, rightHudX: CANVAS_WIDTH - 80 });
   const [bulletCount, setBulletCount] = useState(0);
 
   // Generate stars with bell curve distribution
@@ -77,6 +83,21 @@ function App() {
     }
     asteroidsRef.current = initialAsteroids;
   }, []);
+
+  const xpNeededForNextLevel = useCallback((level) => Math.round(XP_LEVEL_BASE * Math.pow(XP_LEVEL_GROWTH, Math.max(0, level - 1))), []);
+
+  const addXp = useCallback((amount) => {
+    let newXp = xpRef.current + amount;
+    let newLevel = levelRef.current;
+    let needed = xpNeededForNextLevel(newLevel);
+    while (newXp >= needed) {
+      newXp -= needed;
+      newLevel += 1;
+      needed = xpNeededForNextLevel(newLevel);
+    }
+    xpRef.current = newXp;
+    levelRef.current = newLevel;
+  }, [xpNeededForNextLevel]);
 
   // Initialize asteroids and stars
   useEffect(() => {
@@ -162,9 +183,11 @@ function App() {
 
   const startGame = () => {
     gameStartedRef.current = true;
-    setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false }));
+    setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false, xp: 0, level: 1 }));
     scoreRef.current = 0;
     livesRef.current = INITIAL_LIVES;
+    xpRef.current = 0;
+    levelRef.current = 1;
     gameOverRef.current = false;
     lastShotTimeRef.current = 0;
     shipRef.current = new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
@@ -303,6 +326,7 @@ function App() {
           if (!asteroidsToRemove.includes(ai)) asteroidsToRemove.push(ai);
           newAsteroids.push(...asteroid.split());
           scoreRef.current += SCORE_PER_ASTEROID;
+          addXp(XP_PER_ASTEROID);
         }
       });
     });
@@ -342,6 +366,43 @@ function App() {
     if (!ctx) return; // jsdom/test environment safeguard
     Minimap.draw(ctx, shipRef.current, asteroidsRef.current, cameraRef.current);
   }, []);
+
+  const renderXpBar = useCallback(() => {
+    const canvas = xpBarCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    // Solid black box with golden border
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+    // Inner area (black) where progress fills
+    const pad = 2;
+    const innerW = w - pad * 2;
+    const innerH = h - pad * 2;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(pad, pad, innerW, innerH);
+    // Progress
+    const needed = xpNeededForNextLevel(uiState.level);
+    const pct = Math.max(0, Math.min(1, uiState.xp / needed));
+    ctx.fillStyle = '#172fe1';
+    ctx.fillRect(pad, pad, Math.floor(innerW * pct), innerH);
+    // Ticks at each 1/8
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 1; i < 8; i++) {
+      const x = Math.floor(innerW * i / 8) + pad;
+      ctx.moveTo(x + 0.5, pad);
+      ctx.lineTo(x + 0.5, pad + innerH);
+    }
+    ctx.stroke();
+  }, [uiState.level, uiState.xp, xpNeededForNextLevel]);
 
   const render = useCallback(() => {
     const canvas = canvasRef.current;
@@ -430,7 +491,9 @@ function App() {
 
     // Render minimap separately
     renderMinimap();
-  }, [renderMinimap]);
+    // Render XP bar
+    renderXpBar();
+  }, [renderMinimap, renderXpBar]);
 
 
   useEffect(() => {
@@ -439,21 +502,14 @@ function App() {
       render();
       
       // Throttle UI updates - only update when values actually change
-      setUiState((prev) => {
-        const newScore = scoreRef.current;
-        const newLives = livesRef.current;
-        const newGameOver = gameOverRef.current;
-        
-        if (prev.score !== newScore || prev.lives !== newLives || prev.gameOver !== newGameOver) {
-          return {
-            ...prev,
-            score: newScore,
-            lives: newLives,
-            gameOver: newGameOver
-          };
-        }
-        return prev; // No changes, return previous state to prevent re-render
-      });
+      setUiState((prev) => ({
+        ...prev,
+        score: scoreRef.current,
+        lives: livesRef.current,
+        gameOver: gameOverRef.current,
+        xp: xpRef.current,
+        level: levelRef.current,
+      }));
       
       requestRef.current = requestAnimationFrame(loop);
     };
@@ -545,7 +601,26 @@ function App() {
       // Keep minimap and stats vertically aligned regardless of window size
       const minimapBottom = -Math.round(minimapHeight * 0.75); // show top 1/4 overlapping play area
       setLayout(prev => ({ ...prev, minimapBottom }));
-      
+
+      // Compute HUD anchor X positions around minimap and expose play/minimap sizes
+      const leftHudX = Math.round((playWidth - minimapWidth) / 2 - 50);
+      const rightHudX = Math.round((playWidth + minimapWidth) / 2 + 50);
+      setMetaLayout({ playWidth, minimapWidth, leftHudX, rightHudX });
+
+      // Size and position XP bar: slightly narrower than play area
+      const xpbar = xpBarCanvasRef.current;
+      if (xpbar) {
+        const xpW = Math.max(100, playWidth - 60);
+        const xpH = 15;
+        xpbar.width = xpW;
+        xpbar.height = xpH;
+        xpbar.style.width = `${xpW}px`;
+        xpbar.style.height = `${xpH}px`;
+        // center horizontally; 1px above play area (handled by CSS top:-16)
+        const leftPx = Math.round((playWidth - xpW) / 2);
+        xpbar.style.left = `${leftPx}px`;
+      }
+
       // Update constants to match current canvas size for proper rendering
       const updatedCanvasWidth = playWidth - 4;
       const updatedCanvasHeight = playHeight - 4;
@@ -595,6 +670,8 @@ function App() {
           role="img"
           aria-label="Asteroids play area"
         />
+        {/* XP Bar above play area */}
+        <canvas ref={xpBarCanvasRef} className="xpbar-canvas" />
         {!uiState.gameStarted && (
           <div className="title-overlay">
             <div className="title-text">ASTEROIDS</div>
@@ -607,22 +684,33 @@ function App() {
           style={{ bottom: `${layout.minimapBottom}px` }}
         />
         
-        {/* Score/Lives positioned under play area, left of minimap */}
+        {/* Score/Lives under play area, 50px left of minimap */}
         <div style={{
           position: 'absolute',
-          bottom: `${layout.minimapBottom}px`, // track minimap position
-          left: '0',       // anchor to left edge of play area
-          transform: 'none',
-          paddingLeft: '24px',
+          bottom: '-50px',
+          left: `${metaLayout.leftHudX}px`,
+          transform: 'translateX(-100%)',
           display: 'flex',
-          gap: '32px',
+          gap: '24px',
           fontSize: '20px',
           fontWeight: 'bold',
           color: 'white'
         }}>
-        <div>Score: {uiState.score}</div>
-        <div>Lives: {uiState.lives}</div>
-      </div>
+          <div>XP: {uiState.xp}/{xpNeededForNextLevel(uiState.level)}</div>
+          <div>Lives: {uiState.lives}</div>
+        </div>
+
+        {/* Level indicator under play area, 50px right of minimap */}
+        <div style={{
+          position: 'absolute',
+          bottom: '-50px',
+          left: `${metaLayout.rightHudX}px`,
+          fontSize: '20px',
+          fontWeight: 'bold',
+          color: 'white'
+        }}>
+          Level: {uiState.level}
+        </div>
       <div data-testid="bullet-count" style={{ display: 'none' }}>{bulletCount}</div>
     </div>
     <div className="hud-container">
