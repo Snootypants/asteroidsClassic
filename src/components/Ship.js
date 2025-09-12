@@ -9,12 +9,20 @@ export class Ship {
     this.angle = 0;
     this.size = SHIP_SIZE;
     this.speed = SHIP_SPEED;
+    this.invulnerable = false;
+    this.invulnerableUntil = 0;
   }
 
   draw(ctx) {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
+    
+    // Flash when invulnerable
+    if (this.invulnerable && Date.now() % 200 < 100) {
+      ctx.globalAlpha = 0.3;
+    }
+    
     ctx.beginPath();
     ctx.moveTo(this.size, 0);
     ctx.lineTo(-this.size / 2, -this.size / 2);

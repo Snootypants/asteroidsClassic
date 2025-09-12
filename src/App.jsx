@@ -3,14 +3,17 @@ import { Ship } from './components/Ship.js';
 import { Asteroid } from './components/Asteroid.js';
 import { Bullet } from './components/Bullet.js';
 import { checkCollision, wrapPosition } from './utils/collision.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CROSSHAIR_SIZE, MOUSE_OFFSET, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX, XP_PER_ASTEROID, XP_LEVEL_BASE, XP_LEVEL_GROWTH, ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS, INITIAL_ASTEROID_COUNT, MAX_BULLETS, CROSSHAIR_SIZE, SCORE_PER_ASTEROID, INITIAL_LIVES, STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, WORLD_WIDTH, WORLD_HEIGHT, ZOOM_SPEED, SHIP_FRICTION, SHIP_DECELERATION, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD, MIN_PARALLAX, MAX_PARALLAX, XP_PER_ASTEROID, XP_LEVEL_BASE, XP_LEVEL_GROWTH, ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL } from './utils/constants.js';
 import { LevelUpEffect } from './effects/LevelUpEffect.js';
 import { StageClearEffect } from './effects/StageClearEffect.js';
 import { HyperSpaceJumpEffect } from './effects/HyperSpaceJumpEffect.js';
+import { DeathEffect } from './effects/DeathEffect.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import PauseOverlay from './components/PauseOverlay.jsx';
 import StartOverlay from './components/StartOverlay.jsx';
+import GameOverOverlay from './components/GameOverOverlay.jsx';
+import DeathOverlay from './components/DeathOverlay.jsx';
 import './App.css';
 
 function App() {
@@ -32,6 +35,8 @@ function App() {
   const levelUpEffectRef = useRef(new LevelUpEffect());
   const stageClearEffectRef = useRef(new StageClearEffect());
   const hyperSpaceJumpEffectRef = useRef(new HyperSpaceJumpEffect());
+  const deathEffectRef = useRef(new DeathEffect());
+  const deathSequenceActiveRef = useRef(false);
   const stageRef = useRef(1);
   const baseAsteroidCountRef = useRef(INITIAL_ASTEROID_COUNT);
   const gameOverRef = useRef(false);
@@ -48,6 +53,11 @@ function App() {
   const testingModeRef = useRef(false);
   const canvasWidthRef = useRef(CANVAS_WIDTH);
   const canvasHeightRef = useRef(CANVAS_HEIGHT);
+  const gameStartTimeRef = useRef(0);
+  const elapsedTimeRef = useRef(0);
+  const pausedTimeRef = useRef(0);
+  const pauseStartRef = useRef(0);
+  const timerIntervalRef = useRef(null);
   // Simplified firing: handled in the main update loop via a single timer
   const [uiState, setUiState] = useState({
     score: 0,
@@ -58,7 +68,10 @@ function App() {
     gameStarted: false,
     isPaused: false,
     testingMode: false,
-    mode: null // 'waves' | 'survival'
+    mode: null, // 'waves' | 'survival'
+    timeString: '0:00',
+    finalStats: null,
+    showDeathOverlay: false
   });
   // Layout state for responsive HUD placement
   const [layout, setLayout] = useState({ minimapBottom: -90 });
@@ -237,6 +250,31 @@ function App() {
             hyperSpaceJumpEffectRef.current.initStarVelocities(starsRef.current);
           }
         }
+        if (e.code === 'Digit4') {
+          // Trigger game over for testing
+          gameOverRef.current = true;
+          stopTimer();
+          setUiState(prev => ({ 
+            ...prev, 
+            gameOver: true,
+            finalStats: {
+              wave: stageRef.current,
+              level: levelRef.current,
+              score: scoreRef.current,
+              timeString: formatTime(elapsedTimeRef.current)
+            }
+          }));
+        }
+        if (e.code === 'Digit5') {
+          // Trigger death effect for testing
+          const ship = shipRef.current;
+          if (ship) {
+            console.log('Test trigger: Death effect at ship position', ship.x, ship.y);
+            deathEffectRef.current.trigger(ship.x, ship.y);
+            livesRef.current = 0; // Set lives to 0 to trigger game over sequence
+            console.log('Death effect active:', deathEffectRef.current.active);
+          }
+        }
       }
     };
     
@@ -317,6 +355,36 @@ function App() {
     };
   }, [triggerLevelUp, startNewStage]);
 
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const startTimer = () => {
+    gameStartTimeRef.current = Date.now();
+    elapsedTimeRef.current = 0;
+    
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+    
+    timerIntervalRef.current = setInterval(() => {
+      if (!isPausedRef.current && !deathSequenceActiveRef.current && gameStartedRef.current && !gameOverRef.current) {
+        const elapsed = Math.floor((Date.now() - gameStartTimeRef.current - pausedTimeRef.current) / 1000);
+        elapsedTimeRef.current = elapsed;
+        setUiState(prev => ({ ...prev, timeString: formatTime(elapsed) }));
+      }
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+  };
+
   const startGame = () => {
     gameStartedRef.current = true;
     setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false, xp: 0, level: 1 }));
@@ -326,6 +394,9 @@ function App() {
     levelRef.current = 1;
     gameOverRef.current = false;
     lastShotTimeRef.current = 0;
+    pausedTimeRef.current = 0;
+    pauseStartRef.current = 0;
+    startTimer();
     shipRef.current = new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
     bulletsRef.current = [];
     setBulletCount(0);
@@ -348,6 +419,7 @@ function App() {
     const worldPos = cameraRef.current.screenToWorld(mouseScreenRef.current.x, mouseScreenRef.current.y, cw, ch);
     mousePositionRef.current = { x: worldPos.x, y: worldPos.y };
     
+    deathEffectRef.current.reset();
     // Re-initialize asteroids
     initializeAsteroids();
     
@@ -383,11 +455,41 @@ function App() {
     setUiState(prev => ({ ...prev, isPaused: false }));
   }, []);
 
+  const handlePlayAgain = () => {
+    startGame();
+  };
+
+  const handleMainMenu = () => {
+    handleExitToMenu();
+  };
+
+  const handleContinueDeath = () => {
+    // Calculate how long we were paused
+    if (pauseStartRef.current > 0) {
+      pausedTimeRef.current += Date.now() - pauseStartRef.current;
+      pauseStartRef.current = 0;
+    }
+    
+    // Hide overlay and unpause game
+    setUiState(prev => ({ ...prev, showDeathOverlay: false }));
+    deathSequenceActiveRef.current = false;
+    
+    // Create new ship with invulnerability
+    shipRef.current = new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+    shipRef.current.invulnerable = true;
+    shipRef.current.invulnerableUntil = Date.now() + 3000; // 3 seconds
+    
+    // Reset death effect
+    deathEffectRef.current.reset();
+  };
+
   const handleExitToMenu = useCallback(() => {
     // Clear gameplay state and return to start menu
     isPausedRef.current = false;
     gameStartedRef.current = false;
     gameOverRef.current = false;
+    deathSequenceActiveRef.current = false;
+    stopTimer();
     bulletsRef.current = [];
     asteroidsRef.current = [];
     setBulletCount(0);
@@ -400,7 +502,31 @@ function App() {
   }, []);
 
   const update = useCallback(() => {
-    if (gameOverRef.current || !gameStartedRef.current || isPausedRef.current) return;
+    // ALWAYS update death effect, even during pause
+    if (deathEffectRef.current.active) {
+      deathEffectRef.current.update();
+    }
+    
+    // Check for game over after death effect completes
+    if (deathEffectRef.current.isDone() && livesRef.current <= 0 && !gameOverRef.current) {
+      deathSequenceActiveRef.current = false; // Unpause for game over screen
+      gameOverRef.current = true;
+      stopTimer();
+      setUiState(prev => ({ 
+        ...prev, 
+        gameOver: true,
+        finalStats: {
+          wave: stageRef.current,
+          level: levelRef.current,
+          score: scoreRef.current,
+          timeString: formatTime(elapsedTimeRef.current)
+        }
+      }));
+      deathEffectRef.current.reset();
+    }
+    
+    // Now check pause conditions (but exclude death effect from the check)
+    if (gameOverRef.current || !gameStartedRef.current || isPausedRef.current || deathSequenceActiveRef.current) return;
 
     // Update camera zoom
     const camera = cameraRef.current;
@@ -410,47 +536,51 @@ function App() {
     const keys = keysRef.current;
     const ship = shipRef.current;
     
-    // Reproject last known screen mouse into world space even if mouse is idle.
-    // This prevents the crosshair from becoming stale when the camera moves.
-    const canvasWidth = canvasWidthRef.current || CANVAS_WIDTH;
-    const canvasHeight = canvasHeightRef.current || CANVAS_HEIGHT;
-    const reproj = camera.screenToWorld(
-      mouseScreenRef.current.x,
-      mouseScreenRef.current.y,
-      canvasWidth,
-      canvasHeight
-    );
-    mousePositionRef.current.x = reproj.x;
-    mousePositionRef.current.y = reproj.y;
-    const mousePos = mousePositionRef.current;
-    
-    // Calculate angle to mouse crosshair
-    const dx = mousePos.x - ship.x;
-    const dy = mousePos.y - ship.y;
-    ship.angle = Math.atan2(dy, dx);
-    
-    // W/S movement controls
-    if (keys.KeyW) {
-      ship.vx += Math.cos(ship.angle) * ship.speed;
-      ship.vy += Math.sin(ship.angle) * ship.speed;
-    }
-    
-    // Apply velocity and friction
-    ship.x += ship.vx;
-    ship.y += ship.vy;
-    
-    // S key brakes (slows down to zero, no reverse)
-    if (keys.KeyS) {
-      ship.vx *= SHIP_DECELERATION;
-      ship.vy *= SHIP_DECELERATION;
+    if (deathEffectRef.current.active) {
+      // Skip ship update during death effect
     } else {
-      ship.vx *= SHIP_FRICTION;
-      ship.vy *= SHIP_FRICTION;
-    }
-    wrapPosition(ship); // World wrapping
+      // Reproject last known screen mouse into world space even if mouse is idle.
+      // This prevents the crosshair from becoming stale when the camera moves.
+      const canvasWidth = canvasWidthRef.current || CANVAS_WIDTH;
+      const canvasHeight = canvasHeightRef.current || CANVAS_HEIGHT;
+      const reproj = camera.screenToWorld(
+        mouseScreenRef.current.x,
+        mouseScreenRef.current.y,
+        canvasWidth,
+        canvasHeight
+      );
+      mousePositionRef.current.x = reproj.x;
+      mousePositionRef.current.y = reproj.y;
+      const mousePos = mousePositionRef.current;
+      
+      // Calculate angle to mouse crosshair
+      const dx = mousePos.x - ship.x;
+      const dy = mousePos.y - ship.y;
+      ship.angle = Math.atan2(dy, dx);
+      
+      // W/S movement controls
+      if (keys.KeyW) {
+        ship.vx += Math.cos(ship.angle) * ship.speed;
+        ship.vy += Math.sin(ship.angle) * ship.speed;
+      }
+      
+      // Apply velocity and friction
+      ship.x += ship.vx;
+      ship.y += ship.vy;
+      
+      // S key brakes (slows down to zero, no reverse)
+      if (keys.KeyS) {
+        ship.vx *= SHIP_DECELERATION;
+        ship.vy *= SHIP_DECELERATION;
+      } else {
+        ship.vx *= SHIP_FRICTION;
+        ship.vy *= SHIP_FRICTION;
+      }
+      wrapPosition(ship); // World wrapping
 
-    // Update camera to follow ship
-    camera.followShip(ship.x, ship.y, canvasWidth, canvasHeight);
+      // Update camera to follow ship
+      camera.followShip(ship.x, ship.y, canvasWidth, canvasHeight);
+    }
 
     // Update asteroids
     asteroidsRef.current.forEach((asteroid) => {
@@ -507,20 +637,49 @@ function App() {
     // Add new asteroids from splits
     asteroidsRef.current.push(...newAsteroids);
 
-    // Ship collision
-    let shipCollisionIndex = -1;
-    asteroidsRef.current.forEach((asteroid, ai) => {
-      if (checkCollision(shipRef.current, asteroid)) {
-        livesRef.current -= 1;
-        if (livesRef.current <= 0) gameOverRef.current = true;
-        shipRef.current = new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
-        shipCollisionIndex = ai;
+    // Ship collision - only check if not invulnerable and not in death sequence
+    if (!deathSequenceActiveRef.current && shipRef.current && !shipRef.current.invulnerable) {
+      let shipCollisionIndex = -1;
+      let shipCollisionSplits = [];
+      
+      asteroidsRef.current.forEach((asteroid, ai) => {
+        if (checkCollision(shipRef.current, asteroid)) {
+          livesRef.current -= 1;
+          shipCollisionSplits = asteroid.split();
+          shipCollisionIndex = ai;
+          
+          // Pause game immediately
+          deathSequenceActiveRef.current = true;
+          pauseStartRef.current = Date.now(); // Track when pause started
+          
+          // Trigger death effect
+          deathEffectRef.current.trigger(shipRef.current.x, shipRef.current.y);
+          
+          if (livesRef.current > 0) {
+            // Show death overlay after explosion
+            setTimeout(() => {
+              setUiState(prev => ({ 
+                ...prev, 
+                showDeathOverlay: true,
+                lives: livesRef.current
+              }));
+            }, 1500);
+          }
+        }
+      });
+      
+      // Remove asteroid and add splits
+      if (shipCollisionIndex >= 0) {
+        asteroidsRef.current.splice(shipCollisionIndex, 1);
+        asteroidsRef.current.push(...shipCollisionSplits);
       }
-    });
-    
-    // Remove the asteroid that hit the ship
-    if (shipCollisionIndex >= 0) {
-      asteroidsRef.current.splice(shipCollisionIndex, 1);
+    }
+
+    // Update invulnerability
+    if (shipRef.current && shipRef.current.invulnerable) {
+      if (Date.now() > shipRef.current.invulnerableUntil) {
+        shipRef.current.invulnerable = false;
+      }
     }
 
     // Level-up effect update
@@ -615,8 +774,8 @@ function App() {
       });
     }
 
-    // Draw ship (with hyperspace fade support)
-    if (shipRef.current && camera.isVisible(shipRef.current.x, shipRef.current.y, 50, canvasWidth, canvasHeight)) {
+    // Draw ship (with hyperspace fade support) - hide during death effect
+    if (!deathEffectRef.current.active && shipRef.current && camera.isVisible(shipRef.current.x, shipRef.current.y, 50, canvasWidth, canvasHeight)) {
       const screenPos = camera.worldToScreen(shipRef.current.x, shipRef.current.y, canvasWidth, canvasHeight);
       ctx.save();
       
@@ -689,6 +848,9 @@ function App() {
     levelUpEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
     stageClearEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
     hyperSpaceJumpEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
+    
+    // Draw death effect (after all game objects)
+    deathEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
   }, [renderMinimap, renderXpBar]);
 
 
@@ -868,6 +1030,9 @@ function App() {
         />
         {/* XP Bar above play area */}
         <canvas ref={xpBarCanvasRef} className="xpbar-canvas" />
+        {uiState.gameStarted && !uiState.gameOver && (
+          <div className="timer-display">{uiState.timeString}</div>
+        )}
         {!uiState.gameStarted && (
           <StartOverlay onSelect={handleSelectMode} />
         )}
@@ -880,6 +1045,24 @@ function App() {
             smallCount={asteroidCountsRef.current.small}
             onResume={handleResume}
             onExit={handleExitToMenu}
+          />
+        )}
+        {uiState.showDeathOverlay && (
+          <DeathOverlay 
+            mode={uiState.mode}
+            wave={stageRef.current}
+            level={uiState.level}
+            timeString={uiState.timeString}
+            livesRemaining={uiState.lives}
+            onContinue={handleContinueDeath}
+          />
+        )}
+        {uiState.gameOver && uiState.finalStats && (
+          <GameOverOverlay 
+            mode={uiState.mode}
+            stats={uiState.finalStats}
+            onPlayAgain={handlePlayAgain}
+            onMainMenu={handleMainMenu}
           />
         )}
         <canvas 
@@ -919,10 +1102,6 @@ function App() {
     </div>
     <div className="hud-container">
       <div className="hud-right">
-          {uiState.gameOver && <div className="game-over">Game Over</div>}
-          {uiState.gameStarted && uiState.gameOver && (
-            <button onClick={startGame} className="game-button">New Game</button>
-          )}
         </div>
       </div>
       {uiState.testingMode && (
