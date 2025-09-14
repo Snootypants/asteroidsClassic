@@ -84,3 +84,7 @@ export const STAR_FIELD_MULTIPLIER = 3;
 export const STAR_FIELD_SPREAD = 1.5;
 export const MIN_PARALLAX = 0.3;
 export const MAX_PARALLAX = 0.7;
+
+// Ship invulnerability and death pause
+export const SHIP_INVULNERABILITY_MS = 2000; // 2 seconds
+export const DEATH_PAUSE_MS = 1000;          // 1 second

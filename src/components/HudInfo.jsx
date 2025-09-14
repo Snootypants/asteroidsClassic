@@ -5,20 +5,21 @@ export default function HudInfo({
   level,
   xp,
   xpNeeded,
-  metaLayout,
   bulletCount,
   gameOver,
   gameStarted,
-  onStartGame
+  onStartGame,
+  mode,
+  waveNumber,
+  formattedTime
 }) {
   return (
     <>
-      {/* Score/Lives under play area, 50px left of minimap */}
+      {/* LEFT: XP, Level, Lives */}
       <div style={{
         position: 'absolute',
-        bottom: '-50px',
-        left: `${metaLayout.leftHudX}px`,
-        transform: 'translateX(-100%)',
+        bottom: '16px',
+        left: '16px',
         display: 'flex',
         gap: '24px',
         fontSize: '20px',
@@ -26,33 +27,40 @@ export default function HudInfo({
         color: 'white'
       }}>
         <div>XP: {xp}/{xpNeeded}</div>
+        <div>Level: {level}</div>
         <div>Lives: {lives}</div>
       </div>
 
-      {/* Level indicator under play area, 50px right of minimap */}
+      {/* RIGHT: Wave (waves) or Time (survival) */}
       <div style={{
         position: 'absolute',
-        bottom: '-50px',
-        left: `${metaLayout.rightHudX}px`,
+        bottom: '16px',
+        right: '16px',
         fontSize: '20px',
         fontWeight: 'bold',
         color: 'white'
       }}>
-        Level: {level}
+        {mode === 'waves' ? `Wave: ${waveNumber || 1}` : `Time: ${formattedTime || '00:00:00'}`}
       </div>
 
-      {/* Hidden bullet count for testing */}
+      {/* Hidden bullet count for tests */}
       <div data-testid="bullet-count" style={{ display: 'none' }}>{bulletCount}</div>
 
-      {/* Game Over section */}
-      <div className="hud-container">
-        <div className="hud-right">
-          {gameOver && <div className="game-over">Game Over</div>}
-          {gameStarted && gameOver && (
-            <button onClick={onStartGame} className="game-button">New Game</button>
+      {/* Simple game over controls if you already render them here */}
+      {gameOver && (
+        <div style={{
+          position: 'absolute',
+          top: '20%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          color: 'white'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: 12, fontSize: 24 }}>Game Over</div>
+          {gameStarted && (
+            <button onClick={onStartGame}>New Game</button>
           )}
         </div>
-      </div>
+      )}
     </>
   );
 }

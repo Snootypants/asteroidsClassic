@@ -1,10 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { Bullet } from '../components/Bullet.js';
 import { Ship } from '../components/Ship.js';
 import { checkCollision, wrapPosition } from '../utils/collision.js';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, MAX_BULLETS,
          SHIP_DECELERATION, SHIP_FRICTION, XP_PER_ASTEROID, SCORE_PER_ASTEROID,
-         WORLD_WIDTH, WORLD_HEIGHT } from '../utils/constants.js';
+         WORLD_WIDTH, WORLD_HEIGHT, DEATH_PAUSE_MS } from '../utils/constants.js';
 
 export function useGameLogic({
   gameOverRef,
@@ -30,9 +30,20 @@ export function useGameLogic({
   hyperSpaceJumpEffectRef,
   starsRef,
   updateAsteroidCounts,
-}) {
+}, options = {}) {
+  const { onLifeLost } = options;
+  const deathPauseUntilRef = useRef(0);
+
   const update = useCallback(() => {
     if (gameOverRef.current || !gameStartedRef.current || isPausedRef.current) return;
+
+    // Capture time once per tick
+    const nowMs = performance.now();
+
+    // Short-circuit during death pause
+    if (nowMs < deathPauseUntilRef.current) {
+      return; // skip physics, input, and collisions this tick
+    }
 
     // Update camera zoom
     const camera = cameraRef.current;
@@ -139,18 +150,36 @@ export function useGameLogic({
     // Add new asteroids from splits
     asteroidsRef.current.push(...newAsteroids);
 
-    // Ship collision
+    // Ship collision handling with invulnerability and death pause
     let shipCollisionIndex = -1;
-    asteroidsRef.current.forEach((asteroid, ai) => {
-      if (checkCollision(shipRef.current, asteroid)) {
-        livesRef.current -= 1;
-        if (livesRef.current <= 0) gameOverRef.current = true;
-        shipRef.current = new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
-        shipCollisionIndex = ai;
-      }
-    });
 
-    // Remove the asteroid that hit the ship
+    if (!shipRef.current.isInvulnerable(nowMs)) {
+      for (let ai = 0; ai < asteroidsRef.current.length; ai += 1) {
+        const asteroid = asteroidsRef.current[ai];
+        if (checkCollision(shipRef.current, asteroid)) {
+          // life loss
+          livesRef.current -= 1;
+          if (livesRef.current <= 0) {
+            gameOverRef.current = true;
+          }
+
+          // reset ship and set timers
+          shipRef.current.resetKinematics(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+          shipRef.current.setInvulnerableFrom(nowMs);
+          deathPauseUntilRef.current = nowMs + DEATH_PAUSE_MS;
+
+          // notify UI for overlay
+          if (typeof onLifeLost === 'function') {
+            onLifeLost(DEATH_PAUSE_MS);
+          }
+
+          shipCollisionIndex = ai;
+          break; // stop after first hit
+        }
+      }
+    }
+
+    // remove the asteroid that hit the ship
     if (shipCollisionIndex >= 0) {
       asteroidsRef.current.splice(shipCollisionIndex, 1);
     }

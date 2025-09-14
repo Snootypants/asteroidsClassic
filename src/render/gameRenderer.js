@@ -79,6 +79,8 @@ export function renderScene({
   const canvasHeight = canvasHeightRef.current || 900;
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
+  const nowMs = performance.now();
+
   const camera = cameraRef.current;
 
   // Draw parallax stars (background) - with hyperspace effect support
@@ -120,7 +122,7 @@ export function renderScene({
     ctx.translate(screenPos.x, screenPos.y);
     ctx.scale(1/camera.zoom, 1/camera.zoom);
     ctx.translate(-shipRef.current.x, -shipRef.current.y);
-    shipRef.current.draw(ctx);
+    shipRef.current.draw(ctx, nowMs);
     ctx.restore();
   }
 

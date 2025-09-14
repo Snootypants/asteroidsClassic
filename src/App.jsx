@@ -12,10 +12,12 @@ import { useGameControls } from './hooks/useGameControls.js';
 import { useGameLogic } from './hooks/useGameLogic.js';
 import { useResponsiveLayout } from './hooks/useResponsiveLayout.js';
 import { useGameLoop } from './hooks/useGameLoop.js';
+import { useGameTimer } from './hooks/useGameTimer.js';
 import { renderScene, renderMinimap, renderXpBar } from './render/gameRenderer.js';
 import HudInfo from './components/HudInfo.jsx';
 import PauseOverlay from './components/PauseOverlay.jsx';
 import StartOverlay from './components/StartOverlay.jsx';
+import LifeLostOverlay from './components/LifeLostOverlay.jsx';
 import './App.css';
 
 function App() {
@@ -47,6 +49,7 @@ function App() {
     gameStarted: false, isPaused: false, testingMode: false, mode: null
   });
   const [bulletCount, setBulletCount] = useState(0);
+  const [lifeLostVisible, setLifeLostVisible] = useState(false);
 
   const world = useGameWorld({ shipRef, bulletsRef, setBulletCount, stageClearEffectRef, hyperSpaceJumpEffectRef, setUiState });
   const session = useGameSession({
@@ -68,14 +71,32 @@ function App() {
     mouseScreenRef, mousePositionRef, asteroidsRef: world.asteroidsRef, bulletsRef, setBulletCount, isMouseDownRef,
     lastShotTimeRef, scoreRef, livesRef, addXp: world.addXp, levelUpEffectRef, stageClearEffectRef, hyperSpaceJumpEffectRef,
     starsRef: world.starsRef, updateAsteroidCounts: world.updateAsteroidCounts,
+  }, {
+    onLifeLost: (ms) => {
+      setLifeLostVisible(true);
+      window.setTimeout(() => setLifeLostVisible(false), ms);
+    }
   });
 
   const { layout, metaLayout } = useResponsiveLayout({ canvasRef, minimapCanvasRef, xpBarCanvasRef, playAreaRef, canvasWidthRef, canvasHeightRef });
 
+  const { start, pause, reset, formattedTime } = useGameTimer();
+
+  const { initializeAsteroids, generateStarfield } = world;
+
   useEffect(() => {
-    world.initializeAsteroids();
-    world.generateStarfield();
-  }, [world]);
+    initializeAsteroids();
+    generateStarfield();
+  }, [initializeAsteroids, generateStarfield]);
+
+  useEffect(() => {
+    const active = uiState.mode === 'survival' && uiState.gameStarted && !uiState.isPaused && !uiState.gameOver;
+    active ? start() : pause();
+  }, [uiState.mode, uiState.gameStarted, uiState.isPaused, uiState.gameOver, start, pause]);
+
+  useEffect(() => {
+    if (!uiState.gameStarted || uiState.mode !== 'survival') reset();
+  }, [uiState.gameStarted, uiState.mode, reset]);
   const render = useCallback(() => {
     renderScene({
       canvasRef,
@@ -141,6 +162,7 @@ function App() {
         {!uiState.gameStarted && (
           <StartOverlay onSelect={session.handleSelectMode} />
         )}
+        <LifeLostOverlay visible={lifeLostVisible} />
         {uiState.gameStarted && !uiState.gameOver && uiState.isPaused && (
           <PauseOverlay
             xp={uiState.xp}
@@ -163,11 +185,13 @@ function App() {
           level={uiState.level}
           xp={uiState.xp}
           xpNeeded={world.xpNeededForNextLevel(uiState.level)}
-          metaLayout={metaLayout}
           bulletCount={bulletCount}
           gameOver={uiState.gameOver}
           gameStarted={uiState.gameStarted}
           onStartGame={session.startGame}
+          mode={uiState.mode}
+          waveNumber={world.stageRef?.current}
+          formattedTime={formattedTime}
         />
       </div>
       {uiState.testingMode && (
