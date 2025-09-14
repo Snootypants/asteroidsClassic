@@ -88,3 +88,6 @@ export const MAX_PARALLAX = 0.7;
 // Ship invulnerability and death pause
 export const SHIP_INVULNERABILITY_MS = 2000; // 2 seconds
 export const DEATH_PAUSE_MS = 1000;          // 1 second
+
+// HUD positioning
+export const HUD_GUTTER_PX = 24;
