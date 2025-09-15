@@ -106,7 +106,7 @@ export function useGameWorld({
         if (shipRef.current && hyperSpaceJumpEffectRef.current) {
           hyperSpaceJumpEffectRef.current.trigger(
             shipRef.current.angle,
-            stageRef.current + 1,
+            stageRef.current,
             baseAsteroidCountRef.current + Math.floor(stageRef.current * 0.5),
             (stageNumber, asteroidCount) => {
               setTimeout(() => startNewStage(stageNumber, asteroidCount), 100);

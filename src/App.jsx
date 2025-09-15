@@ -4,6 +4,7 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, CROSSHAIR_SIZE, INITIAL_LIVES, WORLD_WIDTH
 import { LevelUpEffect } from './effects/LevelUpEffect.js';
 import { StageClearEffect } from './effects/StageClearEffect.js';
 import { HyperSpaceJumpEffect } from './effects/HyperSpaceJumpEffect.js';
+import { DeathExplosion } from './effects/DeathExplosion.js';
 import { Camera } from './utils/camera.js';
 import { Minimap } from './components/Minimap.js';
 import { useGameWorld } from './hooks/useGameWorld.js';
@@ -13,17 +14,15 @@ import { useGameLogic } from './hooks/useGameLogic.js';
 import { useResponsiveLayout } from './hooks/useResponsiveLayout.js';
 import { useGameLoop } from './hooks/useGameLoop.js';
 import { useGameTimer } from './hooks/useGameTimer.js';
-import { renderScene, renderMinimap, renderXpBar } from './render/gameRenderer.js';
-import HudInfo from './components/HudInfo.jsx';
+import { renderScene } from './render/gameRenderer.js';
 import PauseOverlay from './components/PauseOverlay.jsx';
 import StartOverlay from './components/StartOverlay.jsx';
 import LifeLostOverlay from './components/LifeLostOverlay.jsx';
+import HUD from './components/HUD.jsx';
 import './App.css';
 
 function App() {
   const canvasRef = useRef(null);
-  const minimapCanvasRef = useRef(null);
-  const xpBarCanvasRef = useRef(null);
   const playAreaRef = useRef(null);
   const canvasWidthRef = useRef(CANVAS_WIDTH);
   const canvasHeightRef = useRef(CANVAS_HEIGHT);
@@ -44,6 +43,7 @@ function App() {
   const levelUpEffectRef = useRef(new LevelUpEffect());
   const stageClearEffectRef = useRef(new StageClearEffect());
   const hyperSpaceJumpEffectRef = useRef(new HyperSpaceJumpEffect());
+  const deathExplosionRef = useRef(new DeathExplosion());
   const [uiState, setUiState] = useState({
     score: 0, lives: INITIAL_LIVES, xp: 0, level: 1, gameOver: false,
     gameStarted: false, isPaused: false, testingMode: false, mode: null
@@ -51,9 +51,9 @@ function App() {
   const [bulletCount, setBulletCount] = useState(0);
   const [lifeLostVisible, setLifeLostVisible] = useState(false);
 
-  const world = useGameWorld({ shipRef, bulletsRef, setBulletCount, stageClearEffectRef, hyperSpaceJumpEffectRef, setUiState });
+  const world = useGameWorld({ shipRef, bulletsRef, setBulletCount, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef, setUiState });
   const session = useGameSession({
-    setUiState, shipRef, bulletsRef, setBulletCount, canvasRef, cameraRef, mouseScreenRef, mousePositionRef,
+    setUiState, shipRef, isPausedRef, bulletsRef, setBulletCount, canvasRef, cameraRef, mouseScreenRef, mousePositionRef,
     gameStartedRef, gameOverRef, scoreRef, livesRef, lastShotTimeRef, xpRef: world.xpRef, levelRef: world.levelRef,
     stageRef: world.stageRef, baseAsteroidCountRef: world.baseAsteroidCountRef,
     initializeAsteroids: world.initializeAsteroids, generateStarfield: world.generateStarfield,
@@ -61,7 +61,7 @@ function App() {
 
   useGameControls({
     canvasRef, keysRef, mousePositionRef, mouseScreenRef, isMouseDownRef, isPausedRef, testingModeRef,
-    shootBullet: session.shootBullet, triggerLevelUp: world.triggerLevelUp, stageClearEffectRef, hyperSpaceJumpEffectRef,
+    shootBullet: session.shootBullet, triggerLevelUp: world.triggerLevelUp, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef,
     shipRef, stageRef: world.stageRef, baseAsteroidCountRef: world.baseAsteroidCountRef, starsRef: world.starsRef,
     startNewStage: world.startNewStage, setUiState, cameraRef, gameStartedRef, gameOverRef, levelRef: world.levelRef,
   });
@@ -69,7 +69,7 @@ function App() {
   const { update } = useGameLogic({
     gameOverRef, gameStartedRef, isPausedRef, cameraRef, canvasWidthRef, canvasHeightRef, keysRef, shipRef,
     mouseScreenRef, mousePositionRef, asteroidsRef: world.asteroidsRef, bulletsRef, setBulletCount, isMouseDownRef,
-    lastShotTimeRef, scoreRef, livesRef, addXp: world.addXp, levelUpEffectRef, stageClearEffectRef, hyperSpaceJumpEffectRef,
+    lastShotTimeRef, scoreRef, livesRef, addXp: world.addXp, levelUpEffectRef, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef,
     starsRef: world.starsRef, updateAsteroidCounts: world.updateAsteroidCounts,
   }, {
     onLifeLost: (ms) => {
@@ -78,7 +78,7 @@ function App() {
     }
   });
 
-  const { layout, metaLayout } = useResponsiveLayout({ canvasRef, minimapCanvasRef, xpBarCanvasRef, playAreaRef, canvasWidthRef, canvasHeightRef });
+  const { metaLayout } = useResponsiveLayout({ canvasRef, playAreaRef, canvasWidthRef, canvasHeightRef });
 
   const { start, pause, reset, formattedTime } = useGameTimer();
 
@@ -112,19 +112,8 @@ function App() {
       levelUpEffectRef,
       stageClearEffectRef,
       hyperSpaceJumpEffectRef,
+      deathExplosionRef,
       CROSSHAIR_SIZE,
-      renderMinimapFn: () => renderMinimap({
-        minimapCanvasRef,
-        shipRef,
-        asteroidsRef: world.asteroidsRef,
-        cameraRef,
-        Minimap,
-      }),
-      renderXpBarFn: () => renderXpBar({
-        xpBarCanvasRef,
-        uiState,
-        xpNeededForNextLevel: world.xpNeededForNextLevel,
-      }),
     });
   }, [
     canvasRef,
@@ -140,10 +129,6 @@ function App() {
     levelUpEffectRef,
     stageClearEffectRef,
     hyperSpaceJumpEffectRef,
-    minimapCanvasRef,
-    xpBarCanvasRef,
-    uiState,
-    world.xpNeededForNextLevel,
   ]);
   useGameLoop({ update, render, setUiState, scoreRef, livesRef, gameOverRef, xpRef: world.xpRef, levelRef: world.levelRef });
 
@@ -158,7 +143,6 @@ function App() {
           role="img"
           aria-label="Asteroids play area"
         />
-        <canvas ref={xpBarCanvasRef} className="xpbar-canvas" />
         {!uiState.gameStarted && (
           <StartOverlay onSelect={session.handleSelectMode} />
         )}
@@ -174,26 +158,31 @@ function App() {
             onExit={session.handleExitToMenu}
           />
         )}
-        <canvas
-          ref={minimapCanvasRef}
-          className="minimap-canvas"
-          style={{ bottom: `${layout.minimapBottom}px` }}
-        />
 
-        <HudInfo
-          lives={uiState.lives}
-          level={uiState.level}
-          xp={uiState.xp}
-          xpNeeded={world.xpNeededForNextLevel(uiState.level)}
-          bulletCount={bulletCount}
-          gameOver={uiState.gameOver}
-          gameStarted={uiState.gameStarted}
-          onStartGame={session.startGame}
-          mode={uiState.mode}
-          waveNumber={world.stageRef?.current}
-          formattedTime={formattedTime}
-        />
+        <div data-testid="bullet-count" style={{ display: 'none' }}>{bulletCount}</div>
+
+        {uiState.gameOver && (
+          <div style={{
+            position: 'absolute',
+            top: '20%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: 'white'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: 12, fontSize: 24 }}>Game Over</div>
+            {uiState.gameStarted && <button onClick={session.startGame}>New Game</button>}
+          </div>
+        )}
       </div>
+
+      <HUD
+        uiState={uiState}
+        metaLayout={metaLayout}
+        world={world}
+        shipRef={shipRef}
+        cameraRef={cameraRef}
+        formattedTime={formattedTime}
+      />
       {uiState.testingMode && (
         <div className="testing-mode-indicator">
           Testing Mode ON

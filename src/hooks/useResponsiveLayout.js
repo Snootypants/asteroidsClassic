@@ -3,8 +3,6 @@ import { WORLD_WIDTH, WORLD_HEIGHT } from '../utils/constants.js';
 
 export function useResponsiveLayout({
   canvasRef,
-  minimapCanvasRef,
-  xpBarCanvasRef,
   playAreaRef,
   canvasWidthRef,
   canvasHeightRef,
@@ -21,10 +19,10 @@ export function useResponsiveLayout({
   useEffect(() => {
     const updateGameLayout = () => {
       // Fixed margins
-      const MARGIN_LEFT = 100;
-      const MARGIN_RIGHT = 100;
-      const MARGIN_TOP = 100;
-      const MARGIN_BOTTOM = 200;
+      const MARGIN_LEFT = 30;    // Reduced by 70%
+      const MARGIN_RIGHT = 30;   // Reduced by 70%
+      const MARGIN_TOP = 30;     // Reduced by 70%
+      const MARGIN_BOTTOM = 150; // Space for separated HUD
 
       // Target aspect ratio 1349:817
       const ASPECT_RATIO = 1349 / 817; // ≈1.6514041591
@@ -81,29 +79,6 @@ export function useResponsiveLayout({
         canvas.height = playHeight - 4;
       }
 
-      // Update minimap dimensions and ensure it's positioned within play area
-      const minimapCanvas = minimapCanvasRef.current;
-      if (minimapCanvas) {
-        minimapCanvas.width = minimapWidth;
-        minimapCanvas.height = minimapHeight;
-        minimapCanvas.style.width = `${minimapWidth}px`;
-        minimapCanvas.style.height = `${minimapHeight}px`;
-        if (import.meta.env.DEV) {
-          console.log('Minimap dimensions set:', minimapWidth, minimapHeight);
-        }
-      }
-
-      // Update XP bar dimensions
-      const xpBarCanvas = xpBarCanvasRef.current;
-      if (xpBarCanvas) {
-        xpBarCanvas.width = playWidth - 50; // Slightly narrower than play area
-        xpBarCanvas.height = 20;
-        xpBarCanvas.style.width = `${playWidth - 50}px`;
-        xpBarCanvas.style.height = '20px';
-        if (import.meta.env.DEV) {
-          console.log('XP bar dimensions set:', playWidth - 50, 20);
-        }
-      }
 
       // Store dimensions for other components
       canvasWidthRef.current = playWidth - 4;
@@ -138,7 +113,7 @@ export function useResponsiveLayout({
       window.removeEventListener('resize', updateGameLayout);
       window.removeEventListener('orientationchange', updateGameLayout);
     };
-  }, [canvasRef, minimapCanvasRef, xpBarCanvasRef, playAreaRef, canvasWidthRef, canvasHeightRef]);
+  }, [canvasRef, playAreaRef, canvasWidthRef, canvasHeightRef]);
 
   return { layout, metaLayout };
 }

@@ -10,6 +10,7 @@ export class Ship {
     this.size = SHIP_SIZE;
     this.speed = SHIP_SPEED;
     this.invulnerableUntil = 0; // ms, same time base as update loop
+    this.isDestroyed = false; // For hiding during death explosion
   }
 
   isInvulnerable(nowMs) {
@@ -29,6 +30,9 @@ export class Ship {
   }
 
   draw(ctx, nowMs = 0) {
+    // Don't draw if destroyed (during death explosion)
+    if (this.isDestroyed) return;
+
     // blink on 150 ms cadence while invulnerable
     if (this.isInvulnerable(nowMs)) {
       const phase = Math.floor(nowMs / 150) % 2;

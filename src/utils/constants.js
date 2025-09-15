@@ -61,7 +61,7 @@ export const STAR_MEDIUM_THRESHOLD = 0.4;
 // Large world; shape is authoritative for the minimap
 export const VIEWPORT_WIDTH = CANVAS_WIDTH;
 export const VIEWPORT_HEIGHT = CANVAS_HEIGHT;
-export const WORLD_WIDTH = 6000; // requested width
+export const WORLD_WIDTH = 8000; // requested width
 export const WORLD_HEIGHT = 5500; // requested height
 
 // Zoom system

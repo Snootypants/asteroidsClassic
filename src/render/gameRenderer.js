@@ -1,57 +1,5 @@
 // Pure functions - no React imports
 
-export function renderMinimap({ minimapCanvasRef, shipRef, asteroidsRef, cameraRef, Minimap }) {
-  const canvas = minimapCanvasRef.current;
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return; // jsdom/test environment safeguard
-  Minimap.draw(ctx, shipRef.current, asteroidsRef.current, cameraRef.current);
-}
-
-export function renderXpBar({ xpBarCanvasRef, uiState, xpNeededForNextLevel }) {
-  const canvas = xpBarCanvasRef.current;
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return; // jsdom/test environment safeguard
-
-  const w = canvas.width;
-  const h = canvas.height;
-
-  // Clear the canvas
-  ctx.clearRect(0, 0, w, h);
-
-  // Draw background
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-  ctx.fillRect(0, 0, w, h);
-
-  // Calculate XP progress
-  const currentXp = uiState.xp || 0;
-  const totalXpNeeded = xpNeededForNextLevel(uiState.level);
-  const progress = Math.min(currentXp / totalXpNeeded, 1);
-
-  // Draw XP bar background
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-  ctx.fillRect(2, 2, w - 4, h - 4);
-
-  // Draw XP bar fill
-  if (progress > 0) {
-    ctx.fillStyle = '#4CAF50'; // Green color
-    ctx.fillRect(2, 2, (w - 4) * progress, h - 4);
-  }
-
-  // Draw border
-  ctx.strokeStyle = 'white';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(1, 1, w - 2, h - 2);
-
-  // Draw XP text (centered)
-  ctx.fillStyle = 'white';
-  ctx.font = '12px Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const xpText = `${currentXp}/${totalXpNeeded} XP`;
-  ctx.fillText(xpText, w / 2, h / 2);
-}
 
 export function renderScene({
   canvasRef,
@@ -67,9 +15,8 @@ export function renderScene({
   levelUpEffectRef,
   stageClearEffectRef,
   hyperSpaceJumpEffectRef,
+  deathExplosionRef,
   CROSSHAIR_SIZE,
-  renderMinimapFn,
-  renderXpBarFn,
 }) {
   const canvas = canvasRef.current;
   if (!canvas) return;
@@ -174,13 +121,9 @@ export function renderScene({
     ctx.stroke();
   }
 
-  // Render minimap separately
-  renderMinimapFn();
-  // Render XP bar
-  renderXpBarFn();
-
-  // Draw level-up effects (overlay)
+  // Draw effects (overlay)
   levelUpEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
   stageClearEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
   hyperSpaceJumpEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
+  deathExplosionRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
 }

@@ -28,6 +28,7 @@ export function useGameLogic({
   levelUpEffectRef,
   stageClearEffectRef,
   hyperSpaceJumpEffectRef,
+  deathExplosionRef,
   starsRef,
   updateAsteroidCounts,
 }, options = {}) {
@@ -67,13 +68,15 @@ export function useGameLogic({
     mousePositionRef.current.y = reproj.y;
     const mousePos = mousePositionRef.current;
 
-    // Calculate angle to mouse crosshair
-    const dx = mousePos.x - ship.x;
-    const dy = mousePos.y - ship.y;
-    ship.angle = Math.atan2(dy, dx);
+    // Calculate angle to mouse crosshair (unless hyperspace jump is active)
+    if (!hyperSpaceJumpEffectRef.current.active || hyperSpaceJumpEffectRef.current.phase === 'waiting') {
+      const dx = mousePos.x - ship.x;
+      const dy = mousePos.y - ship.y;
+      ship.angle = Math.atan2(dy, dx);
+    }
 
-    // W/S movement controls
-    if (keys.KeyW) {
+    // W/S movement controls (disabled during hyperspace jump except waiting phase)
+    if (keys.KeyW && (!hyperSpaceJumpEffectRef.current.active || hyperSpaceJumpEffectRef.current.phase === 'waiting')) {
       ship.vx += Math.cos(ship.angle) * ship.speed;
       ship.vy += Math.sin(ship.angle) * ship.speed;
     }
@@ -82,13 +85,15 @@ export function useGameLogic({
     ship.x += ship.vx;
     ship.y += ship.vy;
 
-    // S key brakes (slows down to zero, no reverse)
-    if (keys.KeyS) {
-      ship.vx *= SHIP_DECELERATION;
-      ship.vy *= SHIP_DECELERATION;
-    } else {
-      ship.vx *= SHIP_FRICTION;
-      ship.vy *= SHIP_FRICTION;
+    // S key brakes (slows down to zero, no reverse) - disabled during hyperspace jump except waiting phase
+    if (!hyperSpaceJumpEffectRef.current.active || hyperSpaceJumpEffectRef.current.phase === 'waiting') {
+      if (keys.KeyS) {
+        ship.vx *= SHIP_DECELERATION;
+        ship.vy *= SHIP_DECELERATION;
+      } else {
+        ship.vx *= SHIP_FRICTION;
+        ship.vy *= SHIP_FRICTION;
+      }
     }
     wrapPosition(ship); // World wrapping
 
@@ -157,20 +162,22 @@ export function useGameLogic({
       for (let ai = 0; ai < asteroidsRef.current.length; ai += 1) {
         const asteroid = asteroidsRef.current[ai];
         if (checkCollision(shipRef.current, asteroid)) {
+          // Trigger death explosion effect
+          deathExplosionRef.current.trigger(
+            shipRef.current.x,
+            shipRef.current.y,
+            () => {
+              // Respawn callback
+              shipRef.current.resetKinematics(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+              shipRef.current.setInvulnerableFrom(performance.now());
+            },
+            shipRef
+          );
+
           // life loss
           livesRef.current -= 1;
           if (livesRef.current <= 0) {
             gameOverRef.current = true;
-          }
-
-          // reset ship and set timers
-          shipRef.current.resetKinematics(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
-          shipRef.current.setInvulnerableFrom(nowMs);
-          deathPauseUntilRef.current = nowMs + DEATH_PAUSE_MS;
-
-          // notify UI for overlay
-          if (typeof onLifeLost === 'function') {
-            onLifeLost(DEATH_PAUSE_MS);
           }
 
           shipCollisionIndex = ai;
@@ -184,11 +191,12 @@ export function useGameLogic({
       asteroidsRef.current.splice(shipCollisionIndex, 1);
     }
 
-    // Level-up effect update
+    // Effects update
     levelUpEffectRef.current.update();
     stageClearEffectRef.current.update();
     hyperSpaceJumpEffectRef.current.update();
     hyperSpaceJumpEffectRef.current.updateStars(starsRef.current);
+    deathExplosionRef.current.update();
 
     // Update asteroid counts and check for stage clear
     updateAsteroidCounts();

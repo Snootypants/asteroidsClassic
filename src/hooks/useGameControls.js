@@ -13,6 +13,7 @@ export function useGameControls({
   triggerLevelUp,
   stageClearEffectRef,
   hyperSpaceJumpEffectRef,
+  deathExplosionRef,
   shipRef,
   stageRef,
   baseAsteroidCountRef,
@@ -48,10 +49,22 @@ export function useGameControls({
       // Testing mode effect triggers
       if (testingModeRef.current && gameStartedRef.current) {
         if (e.code === 'Digit1') {
-          triggerLevelUp(levelRef.current);
+          // Trigger death explosion at ship position
+          if (shipRef.current && deathExplosionRef.current) {
+            deathExplosionRef.current.trigger(
+              shipRef.current.x,
+              shipRef.current.y,
+              () => {
+                // Respawn callback
+                shipRef.current.resetKinematics(6000 / 2, 5500 / 2); // Use world center
+                shipRef.current.setInvulnerableFrom(performance.now());
+              },
+              shipRef
+            );
+          }
         }
         if (e.code === 'Digit2') {
-          stageClearEffectRef.current.trigger();
+          triggerLevelUp(levelRef.current);
         }
         if (e.code === 'Digit3') {
           const ship = shipRef.current;
@@ -117,6 +130,9 @@ export function useGameControls({
     const handleCanvasClick = () => {
       if (hyperSpaceJumpEffectRef.current.phase === 'waiting') {
         hyperSpaceJumpEffectRef.current.startNewStage();
+      }
+      if (deathExplosionRef.current.isWaiting()) {
+        deathExplosionRef.current.startRespawn();
       }
     };
 

@@ -7,6 +7,7 @@ import { WORLD_WIDTH, WORLD_HEIGHT, CANVAS_WIDTH, CANVAS_HEIGHT, INITIAL_LIVES,
 export function useGameSession({
   setUiState,
   shipRef,
+  isPausedRef,
   bulletsRef,
   setBulletCount,
   canvasRef,
@@ -27,6 +28,7 @@ export function useGameSession({
 }) {
   const startGame = () => {
     gameStartedRef.current = true;
+    isPausedRef.current = false;
     setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false, xp: 0, level: 1 }));
     scoreRef.current = 0;
     livesRef.current = INITIAL_LIVES;
