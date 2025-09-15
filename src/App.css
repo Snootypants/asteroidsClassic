@@ -274,13 +274,6 @@ html, body {
   letter-spacing: 0.5px;
 }
 
-/* XP bar canvas placed just above play area */
-.xpbar-canvas {
-  position: absolute;
-  top: -19px; /* 2px gap above 15px bar and 2px border */
-  left: 0;
-  z-index: 25; /* ensure above play area border */
-}
 
 /* Testing mode indicator */
 .testing-mode-indicator {
@@ -299,146 +292,65 @@ html, body {
   letter-spacing: 1px;
 }
 
-/* Timer Display */
-.timer-display {
+/* New HUD Container System */
+.hud-container {
   position: absolute;
-  top: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 24px;
-  font-weight: bold;
-  color: white;
-  font-family: 'Courier New', monospace;
-  letter-spacing: 2px;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  height: 120px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid white;
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
 }
 
-/* Game Over Overlay */
-.game-over-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
+.hud-xpbar {
   width: 100%;
-  height: 100%;
+  height: 20px;
+  background: rgba(0,0,0,0.5);
+  border-bottom: 2px solid white;
+}
+
+.hud-content {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 100;
+  padding: 0 20px;
+  gap: 80px;
 }
 
-.game-over-card {
-  color: #fff;
-  text-align: center;
-  padding: 32px 40px;
-  border: 2px solid #fff;
-  border-radius: 10px;
-  background: rgba(0,0,0,0.4);
-}
-
-.game-over-title {
-  font-size: 48px;
-  font-weight: bold;
-  color: #fff;
-  margin-bottom: 20px;
-  letter-spacing: 3px;
-}
-
-.game-over-stats {
-  margin-bottom: 25px;
-}
-
-.stat-line {
+.hud-left {
   display: flex;
-  justify-content: space-between;
-  margin: 12px 0;
-  font-size: 18px;
-  min-width: 280px;
-}
-
-.stat-label {
-  color: rgba(255, 255, 255, 0.9);
-  text-align: left;
-}
-
-.stat-value {
-  color: #fff;
-  font-weight: bold;
-  text-align: right;
-}
-
-.game-over-buttons {
-  display: flex;
-  gap: 20px;
+  flex-direction: column;
+  align-items: flex-end;
   justify-content: center;
+  gap: 4px;
+  min-width: 150px;
 }
 
-.game-over-btn {
-  background: #121212;
-  border: 2px solid #fff;
-  color: #fff;
-  padding: 10px 24px;
+.hud-minimap {
+  border: 2px solid rgba(255,255,255,0.8);
+  background: #000;
+  box-shadow: 0 0 10px rgba(0,0,0,0.8);
+}
+
+.hud-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 150px;
+}
+
+.hud-stat {
   font-size: 16px;
   font-weight: bold;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
-.game-over-btn:hover {
-  background: #fff;
-  color: #000;
-}
-
-/* Death Overlay */
-.death-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 100;
-}
-
-.death-card {
-  color: #fff;
-  text-align: center;
-  padding: 32px 40px;
-  border: 2px solid #fff;
-  border-radius: 10px;
-  background: rgba(0,0,0,0.4);
-}
-
-.death-title {
-  font-size: 48px;
-  font-weight: bold;
-  color: #ff4444;
-  margin-bottom: 20px;
-  letter-spacing: 3px;
-}
-
-.death-stats {
-  margin-bottom: 25px;
-}
-
-.death-continue-btn {
-  background: #121212;
-  border: 2px solid #fff;
-  color: #fff;
-  padding: 12px 30px;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-}
-
-.death-continue-btn:hover {
-  background: #fff;
-  color: #000;
+/* Remove old minimap positioning */
+.minimap-canvas {
+  display: none !important;
 }

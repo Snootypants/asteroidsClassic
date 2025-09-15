@@ -61,7 +61,7 @@ export const STAR_MEDIUM_THRESHOLD = 0.4;
 // Large world; shape is authoritative for the minimap
 export const VIEWPORT_WIDTH = CANVAS_WIDTH;
 export const VIEWPORT_HEIGHT = CANVAS_HEIGHT;
-export const WORLD_WIDTH = 6000; // requested width
+export const WORLD_WIDTH = 8000; // requested width
 export const WORLD_HEIGHT = 5500; // requested height
 
 // Zoom system
@@ -84,3 +84,10 @@ export const STAR_FIELD_MULTIPLIER = 3;
 export const STAR_FIELD_SPREAD = 1.5;
 export const MIN_PARALLAX = 0.3;
 export const MAX_PARALLAX = 0.7;
+
+// Ship invulnerability and death pause
+export const SHIP_INVULNERABILITY_MS = 2000; // 2 seconds
+export const DEATH_PAUSE_MS = 1000;          // 1 second
+
+// HUD positioning
+export const HUD_GUTTER_PX = 24;
