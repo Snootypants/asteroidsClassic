@@ -36,7 +36,12 @@ export function useGameLogic({
   const deathPauseUntilRef = useRef(0);
 
   const update = useCallback(() => {
-    if (gameOverRef.current || !gameStartedRef.current || isPausedRef.current) return;
+    // Allow death explosion to continue updating even during game over
+    if (gameOverRef.current) {
+      deathExplosionRef.current.update();
+      return;
+    }
+    if (!gameStartedRef.current || isPausedRef.current) return;
 
     // Capture time once per tick
     const nowMs = performance.now();

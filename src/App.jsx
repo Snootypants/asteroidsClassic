@@ -165,15 +165,25 @@ function App() {
         <div data-testid="bullet-count" style={{ display: 'none' }}>{bulletCount}</div>
 
         {uiState.gameOver && (
-          <div style={{
-            position: 'absolute',
-            top: '20%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            color: 'white'
-          }}>
-            <div style={{ textAlign: 'center', marginBottom: 12, fontSize: 24 }}>Game Over</div>
-            {uiState.gameStarted && <button onClick={session.startGame}>New Game</button>}
+          <div className="pause-overlay">
+            <div className="pause-card">
+              <div className="pause-title">GAME OVER</div>
+              <div className="pause-stats" style={{ marginTop: 20 }}>
+                <div>Score: {uiState.score}</div>
+                <div>Level: {uiState.level}</div>
+              </div>
+              <div className="pause-stats">
+                <div>Wave: {world.stageRef.current}</div>
+                <div>Time: {formattedTime}</div>
+              </div>
+              <div className="pause-stats">
+                <div>XP Earned: {uiState.xp}</div>
+              </div>
+              <div className="pause-actions" style={{ marginTop: 24, gap: 12 }}>
+                <button className="pause-exit-btn" onClick={session.handleExitToMenu}>Main Menu</button>
+                <button className="pause-exit-btn" onClick={session.startGame}>Play Again</button>
+              </div>
+            </div>
           </div>
         )}
       </div>
