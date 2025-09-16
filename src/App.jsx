@@ -16,7 +16,6 @@ import { useGameTimer } from './hooks/useGameTimer.js';
 import { renderScene } from './render/gameRenderer.js';
 import PauseOverlay from './components/PauseOverlay.jsx';
 import StartOverlay from './components/StartOverlay.jsx';
-import LifeLostOverlay from './components/LifeLostOverlay.jsx';
 import GameOverOverlay from './components/GameOverOverlay.jsx';
 import Hud from './components/Hud.jsx';
 import './App.css';
@@ -50,7 +49,6 @@ function App() {
     gameStarted: false, isPaused: false, testingMode: false, mode: null
   });
   const [bulletCount, setBulletCount] = useState(0);
-  const [lifeLostVisible, setLifeLostVisible] = useState(false);
 
   const world = useGameWorld({ shipRef, bulletsRef, setBulletCount, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef, setUiState });
   const session = useGameSession({
@@ -72,11 +70,6 @@ function App() {
     mouseScreenRef, mousePositionRef, asteroidsRef: world.asteroidsRef, bulletsRef, setBulletCount, isMouseDownRef,
     lastShotTimeRef, scoreRef, livesRef, addXp: world.addXp, levelUpEffectRef, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef,
     starsRef: world.starsRef, updateAsteroidCounts: world.updateAsteroidCounts,
-  }, {
-    onLifeLost: (ms) => {
-      setLifeLostVisible(true);
-      window.setTimeout(() => setLifeLostVisible(false), ms);
-    }
   });
 
   const { metaLayout } = useResponsiveLayout({ canvasRef, playAreaRef, canvasWidthRef, canvasHeightRef });
@@ -150,7 +143,6 @@ function App() {
         {!uiState.gameStarted && (
           <StartOverlay onSelect={session.handleSelectMode} />
         )}
-        <LifeLostOverlay visible={lifeLostVisible} />
         {uiState.gameStarted && !uiState.gameOver && uiState.isPaused && (
           <PauseOverlay
             xp={uiState.xp}
