@@ -25,6 +25,7 @@ function App() {
   const playAreaRef = useRef(null);
   const canvasWidthRef = useRef(CANVAS_WIDTH);
   const canvasHeightRef = useRef(CANVAS_HEIGHT);
+  const minimapCanvasRef = useRef(null);
   const shipRef = useRef(new Ship(WORLD_WIDTH / 2, WORLD_HEIGHT / 2));
   const cameraRef = useRef(new Camera());
   const bulletsRef = useRef([]);
@@ -101,6 +102,7 @@ function App() {
       canvasRef,
       canvasWidthRef,
       canvasHeightRef,
+      minimapCanvasRef,
       cameraRef,
       starsRef: world.starsRef,
       shipRef,
@@ -118,6 +120,7 @@ function App() {
     canvasRef,
     canvasWidthRef,
     canvasHeightRef,
+    minimapCanvasRef,
     cameraRef,
     world.starsRef,
     shipRef,
@@ -179,9 +182,8 @@ function App() {
         uiState={uiState}
         metaLayout={metaLayout}
         world={world}
-        shipRef={shipRef}
-        cameraRef={cameraRef}
         formattedTime={formattedTime}
+        minimapCanvasRef={minimapCanvasRef}
       />
       {uiState.testingMode && (
         <div className="testing-mode-indicator">

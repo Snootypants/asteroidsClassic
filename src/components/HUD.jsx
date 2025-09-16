@@ -1,17 +1,14 @@
 import { useRef, useEffect, useCallback } from 'react';
-import { Minimap } from './Minimap.js';
 
 export default function Hud({
   uiState,
   metaLayout,
   world,
-  shipRef,
-  cameraRef,
-  formattedTime
+  formattedTime,
+  minimapCanvasRef
 }) {
   const xpBarCanvasRef = useRef(null);
-  const minimapCanvasRef = useRef(null);
-  const { xpNeededForNextLevel, asteroidsRef, stageRef } = world;
+  const { xpNeededForNextLevel, stageRef } = world;
 
   // XP Bar Rendering Logic
   const renderXpBar = useCallback(() => {
@@ -67,14 +64,6 @@ export default function Hud({
     ctx.fillText(xpText, w / 2, h / 2);
   }, [uiState.level, uiState.xp, xpNeededForNextLevel]);
 
-  // Minimap Rendering Logic
-  const renderMinimap = useCallback(() => {
-    const canvas = minimapCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    Minimap.draw(ctx, shipRef.current, asteroidsRef.current, cameraRef.current);
-  }, [asteroidsRef, cameraRef, shipRef]);
 
   // Canvas Setup and Rendering
   useEffect(() => {
@@ -88,31 +77,20 @@ export default function Hud({
     }
 
     // Setup minimap canvas dimensions
-    const minimapCanvas = minimapCanvasRef.current;
-    if (minimapCanvas) {
-      // Calculate minimap size to fill available HUD space
-      const hudHeight = 120; // from CSS
-      const xpBarHeight = 20;
-      const availableHeight = hudHeight - xpBarHeight - 4; // 4px for borders
-      const worldAspect = 8000 / 5500; // width/height ratio
-      const minimapHeight = availableHeight;
-      const minimapWidth = minimapHeight * worldAspect;
-
-      minimapCanvas.width = minimapWidth;
-      minimapCanvas.height = minimapHeight;
-      minimapCanvas.style.width = `${minimapWidth}px`;
-      minimapCanvas.style.height = `${minimapHeight}px`;
+    const minimapCanvas = minimapCanvasRef?.current;
+    if (minimapCanvas && metaLayout.minimapWidth && metaLayout.minimapHeight) {
+      minimapCanvas.width = metaLayout.minimapWidth;
+      minimapCanvas.height = metaLayout.minimapHeight;
+      minimapCanvas.style.width = `${metaLayout.minimapWidth}px`;
+      minimapCanvas.style.height = `${metaLayout.minimapHeight}px`;
     }
-  }, [metaLayout.playWidth]);
+  }, [metaLayout.playWidth, metaLayout.minimapWidth, metaLayout.minimapHeight, minimapCanvasRef]);
 
   // Render canvases when data changes
   useEffect(() => {
     renderXpBar();
   }, [renderXpBar]);
 
-  useEffect(() => {
-    renderMinimap();
-  }, [renderMinimap, metaLayout.playWidth]);
 
   if (!metaLayout.playWidth) return null;
 

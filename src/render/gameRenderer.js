@@ -1,10 +1,12 @@
 // Pure functions - no React imports
 
+import { Minimap } from '../components/Minimap.js';
 
 export function renderScene({
   canvasRef,
   canvasWidthRef,
   canvasHeightRef,
+  minimapCanvasRef,
   cameraRef,
   starsRef,
   shipRef,
@@ -130,4 +132,16 @@ export function renderScene({
   stageClearEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
   hyperSpaceJumpEffectRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
   deathExplosionRef.current.draw(ctx, camera, canvasWidth, canvasHeight);
+
+  // Render minimap
+  const minimapCanvas = minimapCanvasRef?.current;
+  if (minimapCanvas) {
+    let minimapCtx;
+    try {
+      minimapCtx = minimapCanvas.getContext('2d');
+    } catch {}
+    if (minimapCtx) {
+      Minimap.draw(minimapCtx, shipRef.current, asteroidsRef.current, camera);
+    }
+  }
 }
