@@ -78,13 +78,21 @@ export default function Hud({
 
     // Setup minimap canvas dimensions
     const minimapCanvas = minimapCanvasRef?.current;
-    if (minimapCanvas && metaLayout.minimapWidth && metaLayout.minimapHeight) {
-      minimapCanvas.width = metaLayout.minimapWidth;
-      minimapCanvas.height = metaLayout.minimapHeight;
-      minimapCanvas.style.width = `${metaLayout.minimapWidth}px`;
-      minimapCanvas.style.height = `${metaLayout.minimapHeight}px`;
+    if (minimapCanvas) {
+      // Calculate minimap size to fill available HUD space
+      const hudHeight = 120; // from CSS
+      const xpBarHeight = 20;
+      const availableHeight = hudHeight - xpBarHeight - 4; // 4px for borders
+      const worldAspect = 8000 / 5500; // width/height ratio
+      const minimapHeight = availableHeight;
+      const minimapWidth = minimapHeight * worldAspect;
+
+      minimapCanvas.width = minimapWidth;
+      minimapCanvas.height = minimapHeight;
+      minimapCanvas.style.width = `${minimapWidth}px`;
+      minimapCanvas.style.height = `${minimapHeight}px`;
     }
-  }, [metaLayout.playWidth, metaLayout.minimapWidth, metaLayout.minimapHeight, minimapCanvasRef]);
+  }, [metaLayout.playWidth, minimapCanvasRef]);
 
   // Render canvases when data changes
   useEffect(() => {
