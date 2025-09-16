@@ -17,6 +17,7 @@ import { renderScene } from './render/gameRenderer.js';
 import PauseOverlay from './components/PauseOverlay.jsx';
 import StartOverlay from './components/StartOverlay.jsx';
 import LifeLostOverlay from './components/LifeLostOverlay.jsx';
+import GameOverOverlay from './components/GameOverOverlay.jsx';
 import Hud from './components/Hud.jsx';
 import './App.css';
 
@@ -165,25 +166,14 @@ function App() {
         <div data-testid="bullet-count" style={{ display: 'none' }}>{bulletCount}</div>
 
         {uiState.gameOver && (
-          <div className="pause-overlay">
-            <div className="pause-card">
-              <div className="pause-title">GAME OVER</div>
-              <div className="pause-stats" style={{ marginTop: 20 }}>
-                <div>Level Reached: {uiState.level}</div>
-              </div>
-              <div className="pause-stats">
-                {uiState.mode === 'waves' ? (
-                  <div>Wave Reached: {world.stageRef.current}</div>
-                ) : (
-                  <div>Time Survived: {formattedTime}</div>
-                )}
-              </div>
-              <div className="pause-actions" style={{ marginTop: 24, gap: 12 }}>
-                <button className="pause-exit-btn" onClick={session.handleExitToMenu}>Main Menu</button>
-                <button className="pause-exit-btn" onClick={session.startGame}>Play Again</button>
-              </div>
-            </div>
-          </div>
+          <GameOverOverlay
+            level={uiState.level}
+            mode={uiState.mode}
+            stageRef={world.stageRef}
+            formattedTime={formattedTime}
+            onMainMenu={session.handleExitToMenu}
+            onPlayAgain={session.startGame}
+          />
         )}
       </div>
 
