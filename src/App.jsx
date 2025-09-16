@@ -169,7 +169,6 @@ function App() {
             <div className="pause-card">
               <div className="pause-title">GAME OVER</div>
               <div className="pause-stats" style={{ marginTop: 20 }}>
-                <div>Score: {uiState.score}</div>
                 <div>Level Reached: {uiState.level}</div>
               </div>
               <div className="pause-stats">
@@ -178,9 +177,6 @@ function App() {
                 ) : (
                   <div>Time Survived: {formattedTime}</div>
                 )}
-              </div>
-              <div className="pause-stats">
-                <div>XP Earned: {uiState.xp}</div>
               </div>
               <div className="pause-actions" style={{ marginTop: 24, gap: 12 }}>
                 <button className="pause-exit-btn" onClick={session.handleExitToMenu}>Main Menu</button>
