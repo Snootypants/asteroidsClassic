@@ -41,8 +41,10 @@ export function useGameLogic({
     // Capture time once per tick
     const nowMs = performance.now();
 
-    // Short-circuit during death pause
+    // During death pause, only update death explosion effect
     if (nowMs < deathPauseUntilRef.current) {
+      // Keep updating death explosion during pause
+      deathExplosionRef.current.update();
       return; // skip physics, input, and collisions this tick
     }
 
