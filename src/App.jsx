@@ -170,11 +170,14 @@ function App() {
               <div className="pause-title">GAME OVER</div>
               <div className="pause-stats" style={{ marginTop: 20 }}>
                 <div>Score: {uiState.score}</div>
-                <div>Level: {uiState.level}</div>
+                <div>Level Reached: {uiState.level}</div>
               </div>
               <div className="pause-stats">
-                <div>Wave: {world.stageRef.current}</div>
-                <div>Time: {formattedTime}</div>
+                {uiState.mode === 'waves' ? (
+                  <div>Wave Reached: {world.stageRef.current}</div>
+                ) : (
+                  <div>Time Survived: {formattedTime}</div>
+                )}
               </div>
               <div className="pause-stats">
                 <div>XP Earned: {uiState.xp}</div>

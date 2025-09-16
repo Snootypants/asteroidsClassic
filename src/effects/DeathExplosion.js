@@ -13,7 +13,7 @@ export class DeathExplosion {
     this.shipRef = null; // Reference to ship for hiding
   }
 
-  trigger(x, y, respawnCallback, shipRef = null) {
+  trigger(x, y, respawnCallback, shipRef = null, isGameOver = false) {
     this.active = true;
     this.phase = 'explosion';
     this.timer = 0;
@@ -24,6 +24,7 @@ export class DeathExplosion {
     this.explosionY = y;
     this.onRespawn = respawnCallback;
     this.shipRef = shipRef;
+    this.isGameOver = isGameOver;
 
     // Immediately hide the ship
     if (this.shipRef && this.shipRef.current) {
@@ -214,8 +215,8 @@ export class DeathExplosion {
       ctx.restore();
     }
 
-    // Draw death text
-    if (this.phase === 'text' || this.phase === 'waiting') {
+    // Draw death text (only if not game over)
+    if ((this.phase === 'text' || this.phase === 'waiting') && !this.isGameOver) {
       ctx.save();
       ctx.globalAlpha = this.textOpacity;
       ctx.fillStyle = 'white';

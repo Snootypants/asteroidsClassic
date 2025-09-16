@@ -170,6 +170,7 @@ export function useGameLogic({
         const asteroid = asteroidsRef.current[ai];
         if (checkCollision(shipRef.current, asteroid)) {
           // Trigger death explosion effect
+          const isGameOver = livesRef.current <= 1; // Check if this death causes game over
           deathExplosionRef.current.trigger(
             shipRef.current.x,
             shipRef.current.y,
@@ -178,7 +179,8 @@ export function useGameLogic({
               shipRef.current.resetKinematics(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
               shipRef.current.setInvulnerableFrom(performance.now());
             },
-            shipRef
+            shipRef,
+            isGameOver // Pass the flag
           );
 
           // life loss
