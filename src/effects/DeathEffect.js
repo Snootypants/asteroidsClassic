@@ -9,7 +9,6 @@ export class DeathEffect {
   }
 
   trigger(x, y) {
-    console.log('DeathEffect triggered at:', x, y);
     // Create explosion particles
     const parts = [];
     for (let i = 0; i < 60; i++) {
@@ -35,7 +34,6 @@ export class DeathEffect {
 
   update() {
     if (!this.active) return;
-    console.log('DeathEffect updating, phase:', this.phase, 'particles:', this.particles.length);
 
     if (this.phase === 'explosion') {
       // Update particles
@@ -63,7 +61,6 @@ export class DeathEffect {
 
   draw(ctx, camera, canvasWidth, canvasHeight) {
     if (!this.active) return;
-    console.log('DeathEffect drawing, phase:', this.phase);
 
     // Draw explosion particles
     if (this.phase === 'explosion' || this.particles.length > 0) {

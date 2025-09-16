@@ -6,9 +6,15 @@ import { BULLET_FIRE_RATE, MAX_BULLETS } from './utils/constants.js';
 describe('bullet firing limits', () => {
   it('caps bullets at MAX_BULLETS when holding fire', () => {
     vi.useFakeTimers();
+    vi.setSystemTime(0);
+
     render(<App />);
-    const canvas = screen.getByRole('img');
-    fireEvent.click(canvas); // start game
+
+    // Click StartOverlay "Waves" button to start
+    const wavesButton = screen.getByText(/waves/i);
+    fireEvent.click(wavesButton);
+
+    // Hold Space to fire
     fireEvent.keyDown(window, { code: 'Space' });
 
     for (let i = 0; i < MAX_BULLETS + 2; i++) {
@@ -19,6 +25,8 @@ describe('bullet firing limits', () => {
 
     const count = Number(screen.getByTestId('bullet-count').textContent);
     expect(count).toBe(MAX_BULLETS);
+
+    fireEvent.keyUp(window, { code: 'Space' });
     vi.useRealTimers();
   });
 });

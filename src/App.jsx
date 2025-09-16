@@ -6,7 +6,6 @@ import { StageClearEffect } from './effects/StageClearEffect.js';
 import { HyperSpaceJumpEffect } from './effects/HyperSpaceJumpEffect.js';
 import { DeathExplosion } from './effects/DeathExplosion.js';
 import { Camera } from './utils/camera.js';
-import { Minimap } from './components/Minimap.js';
 import { useGameWorld } from './hooks/useGameWorld.js';
 import { useGameSession } from './hooks/useGameSession.js';
 import { useGameControls } from './hooks/useGameControls.js';
@@ -18,7 +17,7 @@ import { renderScene } from './render/gameRenderer.js';
 import PauseOverlay from './components/PauseOverlay.jsx';
 import StartOverlay from './components/StartOverlay.jsx';
 import LifeLostOverlay from './components/LifeLostOverlay.jsx';
-import HUD from './components/HUD.jsx';
+import Hud from './components/Hud.jsx';
 import './App.css';
 
 function App() {
@@ -63,7 +62,7 @@ function App() {
     canvasRef, keysRef, mousePositionRef, mouseScreenRef, isMouseDownRef, isPausedRef, testingModeRef,
     shootBullet: session.shootBullet, triggerLevelUp: world.triggerLevelUp, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef,
     shipRef, stageRef: world.stageRef, baseAsteroidCountRef: world.baseAsteroidCountRef, starsRef: world.starsRef,
-    startNewStage: world.startNewStage, setUiState, cameraRef, gameStartedRef, gameOverRef, levelRef: world.levelRef,
+    startNewStage: world.startNewStage, startGame: session.startGame, setUiState, cameraRef, gameStartedRef, gameOverRef, levelRef: world.levelRef,
   });
 
   const { update } = useGameLogic({
@@ -129,6 +128,7 @@ function App() {
     levelUpEffectRef,
     stageClearEffectRef,
     hyperSpaceJumpEffectRef,
+    deathExplosionRef,
   ]);
   useGameLoop({ update, render, setUiState, scoreRef, livesRef, gameOverRef, xpRef: world.xpRef, levelRef: world.levelRef });
 
@@ -175,7 +175,7 @@ function App() {
         )}
       </div>
 
-      <HUD
+      <Hud
         uiState={uiState}
         metaLayout={metaLayout}
         world={world}

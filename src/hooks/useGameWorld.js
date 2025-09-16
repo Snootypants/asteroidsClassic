@@ -116,7 +116,7 @@ export function useGameWorld({
         }
       }, 2000);
     }
-  }, [shipRef, stageClearEffectRef, hyperSpaceJumpEffectRef]);
+  }, [shipRef, stageClearEffectRef, hyperSpaceJumpEffectRef, starsRef, startNewStage]);
 
   const startNewStage = useCallback((stageNumber, asteroidCount) => {
     stageRef.current = stageNumber;

@@ -1,7 +1,7 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { Minimap } from './Minimap.js';
 
-export default function HUD({
+export default function Hud({
   uiState,
   metaLayout,
   world,
@@ -11,9 +11,10 @@ export default function HUD({
 }) {
   const xpBarCanvasRef = useRef(null);
   const minimapCanvasRef = useRef(null);
+  const { xpNeededForNextLevel, asteroidsRef, stageRef } = world;
 
   // XP Bar Rendering Logic
-  const renderXpBar = () => {
+  const renderXpBar = useCallback(() => {
     const canvas = xpBarCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -30,7 +31,7 @@ export default function HUD({
 
     // XP progress calculation
     const currentXp = uiState.xp || 0;
-    const totalXpNeeded = world.xpNeededForNextLevel(uiState.level);
+    const totalXpNeeded = xpNeededForNextLevel(uiState.level);
     const progress = Math.min(currentXp / totalXpNeeded, 1);
 
     // Background bar
@@ -64,16 +65,16 @@ export default function HUD({
     ctx.shadowBlur = 4;
     const xpText = `${currentXp} / ${totalXpNeeded} XP`;
     ctx.fillText(xpText, w / 2, h / 2);
-  };
+  }, [uiState.level, uiState.xp, xpNeededForNextLevel]);
 
   // Minimap Rendering Logic
-  const renderMinimap = () => {
+  const renderMinimap = useCallback(() => {
     const canvas = minimapCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    Minimap.draw(ctx, shipRef.current, world.asteroidsRef.current, cameraRef.current);
-  };
+    Minimap.draw(ctx, shipRef.current, asteroidsRef.current, cameraRef.current);
+  }, [asteroidsRef, cameraRef, shipRef]);
 
   // Canvas Setup and Rendering
   useEffect(() => {
@@ -107,11 +108,11 @@ export default function HUD({
   // Render canvases when data changes
   useEffect(() => {
     renderXpBar();
-  }, [uiState.xp, uiState.level]);
+  }, [renderXpBar]);
 
   useEffect(() => {
     renderMinimap();
-  }, [shipRef, world.asteroidsRef, cameraRef, uiState, metaLayout.playWidth]);
+  }, [renderMinimap, metaLayout.playWidth]);
 
   if (!metaLayout.playWidth) return null;
 
@@ -127,7 +128,7 @@ export default function HUD({
       <canvas ref={xpBarCanvasRef} className="hud-xpbar" />
       <div className="hud-content">
         <div className="hud-left">
-          <div className="hud-stat">XP: {uiState.xp}/{world.xpNeededForNextLevel(uiState.level)}</div>
+          <div className="hud-stat">XP: {uiState.xp}/{xpNeededForNextLevel(uiState.level)}</div>
           <div className="hud-stat">Level: {uiState.level}</div>
           <div className="hud-stat">Lives: {uiState.lives}</div>
         </div>
@@ -139,7 +140,7 @@ export default function HUD({
 
         <div className="hud-right">
           <div className="hud-stat">
-            {uiState.mode === 'waves' ? `Wave: ${world.stageRef?.current || 1}` : `Time: ${formattedTime}`}
+            {uiState.mode === 'waves' ? `Wave: ${stageRef?.current || 1}` : `Time: ${formattedTime}`}
           </div>
         </div>
       </div>

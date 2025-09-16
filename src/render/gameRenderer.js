@@ -20,8 +20,12 @@ export function renderScene({
 }) {
   const canvas = canvasRef.current;
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return; // jsdom/test environment safeguard
+
+  let ctx;
+  try {
+    ctx = canvas.getContext('2d');
+  } catch {}
+  if (!ctx) return;
   const canvasWidth = canvasWidthRef.current || 1200;
   const canvasHeight = canvasHeightRef.current || 900;
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);

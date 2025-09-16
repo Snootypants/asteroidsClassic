@@ -86,7 +86,7 @@ export class DeathExplosion {
     this.timer++;
 
     switch (this.phase) {
-      case 'explosion':
+      case 'explosion': {
         // Update particles
         for (let i = this.particles.length - 1; i >= 0; i--) {
           const particle = this.particles[i];
@@ -107,8 +107,9 @@ export class DeathExplosion {
           this.timer = 0;
         }
         break;
+      }
 
-      case 'fading':
+      case 'fading': {
         // Fade to black over 30 frames
         this.fadeOpacity = Math.min(1, this.timer / 30);
 
@@ -118,8 +119,9 @@ export class DeathExplosion {
           this.particles = []; // Clear remaining particles
         }
         break;
+      }
 
-      case 'text':
+      case 'text': {
         // Text animation over 30 frames
         const textProgress = Math.min(this.timer / 30, 1);
         this.textOpacity = textProgress;
@@ -136,10 +138,12 @@ export class DeathExplosion {
           this.timer = 0;
         }
         break;
+      }
 
-      case 'waiting':
+      case 'waiting': {
         // Wait for player input
         break;
+      }
     }
   }
 

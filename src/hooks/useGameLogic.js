@@ -176,6 +176,10 @@ export function useGameLogic({
 
           // life loss
           livesRef.current -= 1;
+          deathPauseUntilRef.current = nowMs + DEATH_PAUSE_MS;
+          if (typeof onLifeLost === 'function') {
+            onLifeLost(DEATH_PAUSE_MS);
+          }
           if (livesRef.current <= 0) {
             gameOverRef.current = true;
           }
@@ -222,8 +226,10 @@ export function useGameLogic({
     levelUpEffectRef,
     stageClearEffectRef,
     hyperSpaceJumpEffectRef,
+    deathExplosionRef,
     starsRef,
     updateAsteroidCounts,
+    onLifeLost,
   ]);
 
   return { update };

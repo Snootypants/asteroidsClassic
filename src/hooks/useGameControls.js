@@ -11,7 +11,6 @@ export function useGameControls({
   testingModeRef,
   shootBullet,
   triggerLevelUp,
-  stageClearEffectRef,
   hyperSpaceJumpEffectRef,
   deathExplosionRef,
   shipRef,
@@ -19,6 +18,7 @@ export function useGameControls({
   baseAsteroidCountRef,
   starsRef,
   startNewStage,
+  startGame,
   setUiState,
   cameraRef,
   gameStartedRef,
@@ -128,6 +128,11 @@ export function useGameControls({
     };
 
     const handleCanvasClick = () => {
+      if (!gameStartedRef.current) {
+        setUiState(prev => ({ ...prev, mode: prev.mode ?? 'survival' }));
+        startGame();
+        return;
+      }
       if (hyperSpaceJumpEffectRef.current.phase === 'waiting') {
         hyperSpaceJumpEffectRef.current.startNewStage();
       }
@@ -136,8 +141,9 @@ export function useGameControls({
       }
     };
 
-    if (canvasRef.current) {
-      canvasRef.current.addEventListener('click', handleCanvasClick);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.addEventListener('click', handleCanvasClick);
     }
 
     window.addEventListener('keydown', handleKeyDown);
@@ -154,8 +160,8 @@ export function useGameControls({
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('wheel', handleWheel);
-      if (canvasRef.current) {
-        canvasRef.current.removeEventListener('click', handleCanvasClick);
+      if (canvas) {
+        canvas.removeEventListener('click', handleCanvasClick);
       }
     };
   }, [
@@ -168,13 +174,14 @@ export function useGameControls({
     testingModeRef,
     shootBullet,
     triggerLevelUp,
-    stageClearEffectRef,
     hyperSpaceJumpEffectRef,
+    deathExplosionRef,
     shipRef,
     stageRef,
     baseAsteroidCountRef,
     starsRef,
     startNewStage,
+    startGame,
     setUiState,
     cameraRef,
     gameStartedRef,

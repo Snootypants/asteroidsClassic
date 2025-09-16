@@ -26,7 +26,7 @@ export function useGameSession({
   initializeAsteroids,
   generateStarfield,
 }) {
-  const startGame = () => {
+  const startGame = useCallback(() => {
     gameStartedRef.current = true;
     isPausedRef.current = false;
     setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false, xp: 0, level: 1 }));
@@ -62,7 +62,12 @@ export function useGameSession({
 
     // Regenerate starfield for new game
     generateStarfield();
-  };
+  }, [
+    setUiState, shipRef, bulletsRef, setBulletCount, cameraRef, canvasRef,
+    mouseScreenRef, mousePositionRef, gameStartedRef, isPausedRef, gameOverRef,
+    scoreRef, livesRef, lastShotTimeRef, xpRef, levelRef, stageRef, baseAsteroidCountRef,
+    initializeAsteroids, generateStarfield
+  ]);
 
   const shootBullet = useCallback((bypassLimit = false) => {
     const ship = shipRef.current;
@@ -77,7 +82,7 @@ export function useGameSession({
   const handleSelectMode = useCallback((mode) => {
     setUiState(prev => ({ ...prev, mode }));
     startGame(); // For now both modes start the same gameplay
-  }, [setUiState]);
+  }, [setUiState, startGame]);
 
   const handleResume = useCallback(() => {
     setUiState(prev => ({ ...prev, isPaused: false }));

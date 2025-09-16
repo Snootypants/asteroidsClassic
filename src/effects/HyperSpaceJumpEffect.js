@@ -90,7 +90,7 @@ export class HyperSpaceJumpEffect {
     this.timer++;
 
     switch (this.phase) {
-      case 'brighten':
+      case 'brighten': {
         // Brighten stars to 400% over 20 frames
         this.starBrightness = 1 + (3 * Math.min(this.timer / 20, 1));
         if (this.timer >= 20) {
@@ -98,19 +98,20 @@ export class HyperSpaceJumpEffect {
           this.timer = 0;
         }
         break;
+      }
 
-      case 'streaking':
+      case 'streaking': {
         // Accelerating streak over 80 frames
         const progress = this.timer / 80;
         // Exponential acceleration curve
         this.streakSpeed = Math.pow(progress, 2) * 50;
-        
+
         // Start fading ship halfway through
         if (this.timer > 40) {
           this.shipOpacity = Math.max(0, 1 - ((this.timer - 40) / 40));
           this.asteroidsOpacity = Math.max(0, 1 - ((this.timer - 40) / 40));
         }
-        
+
         if (this.timer >= 80) {
           this.phase = 'flash';
           this.timer = 0;
@@ -118,23 +119,25 @@ export class HyperSpaceJumpEffect {
           this.asteroidsOpacity = 0;
         }
         break;
+      }
 
-      case 'flash':
+      case 'flash': {
         // Super fast white flash
         if (this.timer < 3) {
           this.flashOpacity = 1;
         } else {
           this.flashOpacity = Math.max(0, 1 - ((this.timer - 3) / 5));
         }
-        
+
         if (this.timer >= 8) {
           this.phase = 'fading';
           this.timer = 0;
           this.flashOpacity = 0;
         }
         break;
+      }
 
-      case 'fading':
+      case 'fading': {
         // Fade to black
         this.fadeOpacity = Math.min(1, this.timer / 20);
         if (this.timer >= 20) {
@@ -144,8 +147,9 @@ export class HyperSpaceJumpEffect {
           this.starBrightness = 1;
         }
         break;
+      }
 
-      case 'shipFadeIn':
+      case 'shipFadeIn': {
         // Ship fades in
         this.shipOpacity = Math.min(1, this.timer / 30);
         if (this.timer >= 30) {
@@ -153,8 +157,9 @@ export class HyperSpaceJumpEffect {
           this.timer = 0;
         }
         break;
+      }
 
-      case 'asteroidsFadeIn':
+      case 'asteroidsFadeIn': {
         // Asteroids fade in
         this.asteroidsOpacity = Math.min(1, this.timer / 30);
         if (this.timer >= 30) {
@@ -162,8 +167,9 @@ export class HyperSpaceJumpEffect {
           this.timer = 0;
         }
         break;
+      }
 
-      case 'text':
+      case 'text': {
         // Text animation
         const textProgress = Math.min(this.timer / 30, 1);
         this.textOpacity = textProgress;
@@ -172,17 +178,19 @@ export class HyperSpaceJumpEffect {
         } else {
           this.textScale = 1 + (0.2 * (1 - (textProgress - 0.5) * 2));
         }
-        
+
         if (this.timer >= 30) {
           this.phase = 'waiting';
           this.timer = 0;
           this.textScale = 1;
         }
         break;
+      }
 
-      case 'waiting':
+      case 'waiting': {
         // Wait for click
         break;
+      }
     }
   }
 

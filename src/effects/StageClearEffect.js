@@ -25,7 +25,7 @@ export class StageClearEffect {
     this.timer++;
 
     switch (this.phase) {
-      case 'sliding':
+      case 'sliding': {
         // Slide in from left to center
         const slideProgress = Math.min(this.timer / STAGE_CLEAR_SLIDE_TIME, 1);
         this.x = -400 + (400 * slideProgress); // Move from -400 to 0
@@ -34,8 +34,9 @@ export class StageClearEffect {
           this.timer = 0;
         }
         break;
+      }
 
-      case 'popping':
+      case 'popping': {
         // Pop effect (scale up then down)
         const popProgress = this.timer / STAGE_CLEAR_POP_TIME;
         if (popProgress < 0.5) {
@@ -49,16 +50,18 @@ export class StageClearEffect {
           this.scale = 1;
         }
         break;
+      }
 
-      case 'holding':
+      case 'holding': {
         // Hold at center
         if (this.timer >= STAGE_CLEAR_HOLD_TIME) {
           this.phase = 'fading';
           this.timer = 0;
         }
         break;
+      }
 
-      case 'fading':
+      case 'fading': {
         // Fade out
         this.opacity = Math.max(0, 1 - (this.timer / STAGE_CLEAR_FADE_TIME));
         if (this.timer >= STAGE_CLEAR_FADE_TIME) {
@@ -66,6 +69,7 @@ export class StageClearEffect {
           this.phase = 'inactive';
         }
         break;
+      }
     }
   }
 
