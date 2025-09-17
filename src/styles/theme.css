@@ -11,7 +11,7 @@
   --hud-height: 110px;
   --hud-padding-h: 14px;
   --hud-padding-top: 0px;
-  --hud-actual-height: 112px;
+  --hud-actual-height: 130px;
 }
 
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
