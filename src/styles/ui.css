@@ -1,0 +1,89 @@
+/* HUD */
+.hudRoot {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: grid;
+  gap: 8px;
+  padding: 10px 14px 14px;
+}
+
+.xpBar {
+  position: relative;
+  height: 18px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+}
+.xpFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 8px rgba(156, 240, 109, 0.35);
+}
+.xpText {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-size: 12px; color: var(--bg);
+  mix-blend-mode: screen;
+}
+
+.hudPanels {
+  display: grid;
+  grid-template-columns: 1fr 180px 1fr;
+  gap: 10px;
+}
+.hudPanel {
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  background: var(--panel-bg);
+  backdrop-filter: var(--panel-blur);
+  display: flex; align-items: center; justify-content: space-around;
+  min-height: 64px;
+}
+.hudMinimap { padding: 4px; }
+.hudColumn { text-align: center; min-width: 72px; }
+.hudLabel { font-size: 12px; color: var(--fg-dim); }
+.hudValue { font-size: 18px; }
+
+/* Overlays (menu/game over) */
+.overlayRoot {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,0.3);
+}
+.panel.modal {
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 20px 24px;
+  width: min(520px, 90vw);
+  background: var(--panel-bg);
+  backdrop-filter: var(--panel-blur);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  text-align: center;
+}
+.title { margin: 4px 0 8px; letter-spacing: 2px; }
+.subtitle { margin: 0 0 14px; color: var(--fg-dim); }
+.row { display: flex; gap: 12px; justify-content: center; }
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 8px 16px;
+  margin: 8px 0 16px;
+}
+.btn {
+  padding: 10px 14px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+.btn.primary {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(156, 240, 109, 0.25) inset;
+}
+.btn:active { transform: translateY(1px); }
+.help { margin-top: 10px; color: var(--fg-dim); }

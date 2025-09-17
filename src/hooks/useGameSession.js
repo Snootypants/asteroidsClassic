@@ -25,6 +25,8 @@ export function useGameSession({
   baseAsteroidCountRef,
   initializeAsteroids,
   generateStarfield,
+  setLastRun,
+  formattedTime,
 }) {
   const startGame = useCallback(() => {
     gameStartedRef.current = true;
@@ -89,14 +91,25 @@ export function useGameSession({
   }, [setUiState]);
 
   const handleExitToMenu = useCallback(() => {
+    // Capture lastRun stats if game was over
+    setUiState(prev => {
+      if (prev.gameOver) {
+        setLastRun({
+          level: prev.level,
+          wave: stageRef.current,
+          time: formattedTime,
+          score: prev.score
+        });
+      }
+      return { ...prev, isPaused: false, gameStarted: false };
+    });
+
     // Clear gameplay state and return to start menu
     gameStartedRef.current = false;
     gameOverRef.current = false;
     bulletsRef.current = [];
     setBulletCount(0);
-    // Reset basic UI
-    setUiState(prev => ({ ...prev, isPaused: false, gameStarted: false }));
-  }, [gameStartedRef, gameOverRef, bulletsRef, setBulletCount, setUiState]);
+  }, [gameStartedRef, gameOverRef, bulletsRef, setBulletCount, setUiState, setLastRun, stageRef, formattedTime]);
 
   return {
     startGame,

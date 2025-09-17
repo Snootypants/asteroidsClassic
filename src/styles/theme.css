@@ -1,0 +1,40 @@
+:root {
+  --fg: #e8e8e8;
+  --fg-dim: #a9a9a9;
+  --bg: #050607;
+  --line: #bfbfbf;
+  --accent: #9cf06d;
+  --accent-2: #e3db6a;
+  --panel-bg: rgba(255,255,255,0.03);
+  --panel-blur: saturate(100%) blur(2px);
+  --radius: 10px;
+  --hud-height: 110px;
+}
+
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.dim { color: var(--fg-dim); }
+
+/* Outer space and frame */
+.outerSpace {
+  position: relative;
+  min-height: 100vh;
+  background: radial-gradient(1200px 600px at 50% 10%, rgba(255,255,255,0.05), transparent 70%),
+              var(--bg);
+  color: var(--fg);
+}
+
+.playfieldFrame {
+  position: relative;
+  margin: 40px auto 0 auto;
+  border: 2px solid var(--line);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset;
+}
+
+/* Subtle vignette outside playfield */
+.outerSpace::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(70% 60% at 50% 45%, transparent, rgba(0,0,0,0.5) 80%);
+}

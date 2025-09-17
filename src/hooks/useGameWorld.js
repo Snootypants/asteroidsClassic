@@ -83,6 +83,34 @@ export function useGameWorld({
     setUiState(prev => ({ ...prev, xp: xpRef.current }));
   }, [xpNeededForNextLevel, triggerLevelUp, setUiState]);
 
+  const startNewStage = useCallback((stageNumber, asteroidCount) => {
+    stageRef.current = stageNumber;
+    baseAsteroidCountRef.current = asteroidCount;
+    stageClearedRef.current = false;
+
+    // Clear bullets
+    bulletsRef.current = [];
+    setBulletCount(0);
+
+    // Reset and re-center ship with zero velocity
+    const ship = shipRef.current;
+    if (ship) {
+      ship.x = WORLD_WIDTH / 2;
+      ship.y = WORLD_HEIGHT / 2;
+      ship.vx = 0;
+      ship.vy = 0;
+    }
+
+    // Initialize new asteroids for the stage
+    initializeAsteroids(asteroidCount);
+
+    // Regenerate starfield for variety
+    generateStarfield();
+
+    // Update UI stage indicator
+    setUiState(prev => ({ ...prev, stage: stageNumber }));
+  }, [initializeAsteroids, generateStarfield, bulletsRef, setBulletCount, shipRef, setUiState]);
+
   const updateAsteroidCounts = useCallback(() => {
     const counts = { large: 0, medium: 0, small: 0 };
 
@@ -117,34 +145,6 @@ export function useGameWorld({
       }, 2000);
     }
   }, [shipRef, stageClearEffectRef, hyperSpaceJumpEffectRef, starsRef, startNewStage]);
-
-  const startNewStage = useCallback((stageNumber, asteroidCount) => {
-    stageRef.current = stageNumber;
-    baseAsteroidCountRef.current = asteroidCount;
-    stageClearedRef.current = false;
-
-    // Clear bullets
-    bulletsRef.current = [];
-    setBulletCount(0);
-
-    // Reset and re-center ship with zero velocity
-    const ship = shipRef.current;
-    if (ship) {
-      ship.x = WORLD_WIDTH / 2;
-      ship.y = WORLD_HEIGHT / 2;
-      ship.vx = 0;
-      ship.vy = 0;
-    }
-
-    // Initialize new asteroids for the stage
-    initializeAsteroids(asteroidCount);
-
-    // Regenerate starfield for variety
-    generateStarfield();
-
-    // Update UI stage indicator
-    setUiState(prev => ({ ...prev, stage: stageNumber }));
-  }, [initializeAsteroids, generateStarfield, bulletsRef, setBulletCount, shipRef, setUiState]);
 
   return {
     // refs

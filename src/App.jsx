@@ -15,10 +15,12 @@ import { useGameLoop } from './hooks/useGameLoop.js';
 import { useGameTimer } from './hooks/useGameTimer.js';
 import { renderScene } from './render/gameRenderer.js';
 import PauseOverlay from './components/PauseOverlay.jsx';
-import StartOverlay from './components/StartOverlay.jsx';
-import GameOverOverlay from './components/GameOverOverlay.jsx';
-import Hud from './components/Hud.jsx';
+import HUD from './components/ui/HUD';
+import StartScreen from './components/ui/StartScreen';
+import GameOverOverlay from './components/ui/GameOverOverlay';
 import './App.css';
+import './styles/theme.css';
+import './styles/ui.css';
 
 function App() {
   const canvasRef = useRef(null);
@@ -49,6 +51,7 @@ function App() {
     gameStarted: false, isPaused: false, testingMode: false, mode: null
   });
   const [bulletCount, setBulletCount] = useState(0);
+  const [lastRun, setLastRun] = useState({ level: 1, wave: 1, time: '00:00:00', score: 0 });
 
   const world = useGameWorld({ shipRef, bulletsRef, setBulletCount, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef, setUiState });
   const session = useGameSession({
@@ -56,6 +59,7 @@ function App() {
     gameStartedRef, gameOverRef, scoreRef, livesRef, lastShotTimeRef, xpRef: world.xpRef, levelRef: world.levelRef,
     stageRef: world.stageRef, baseAsteroidCountRef: world.baseAsteroidCountRef,
     initializeAsteroids: world.initializeAsteroids, generateStarfield: world.generateStarfield,
+    setLastRun, formattedTime,
   });
 
   useGameControls({
@@ -130,57 +134,74 @@ function App() {
   useGameLoop({ update, render, setUiState, scoreRef, livesRef, gameOverRef, xpRef: world.xpRef, levelRef: world.levelRef });
 
   return (
-    <div className="app">
-      <div className="play-area" ref={playAreaRef}>
+    <div className="outerSpace">
+      <div
+        ref={playAreaRef}
+        className="playfieldFrame"
+        style={{
+          width: canvasWidthRef.current + 4,
+          height: canvasHeightRef.current + 4,
+          left: `${metaLayout.playX}px`,
+          top: `${metaLayout.playY}px`,
+          position: 'absolute'
+        }}
+      >
         <canvas
           ref={canvasRef}
-          width={1200}
-          height={900}
+          width={canvasWidthRef.current}
+          height={canvasHeightRef.current}
           className="game-canvas"
           role="img"
           aria-label="Asteroids play area"
         />
-        {!uiState.gameStarted && (
-          <StartOverlay onSelect={session.handleSelectMode} />
-        )}
-        {uiState.gameStarted && !uiState.gameOver && uiState.isPaused && (
-          <PauseOverlay
-            xp={uiState.xp}
-            lives={uiState.lives}
-            largeCount={world.asteroidCountsRef.current.large}
-            mediumCount={world.asteroidCountsRef.current.medium}
-            smallCount={world.asteroidCountsRef.current.small}
-            onResume={session.handleResume}
-            onExit={session.handleExitToMenu}
-          />
-        )}
-
-        <div data-testid="bullet-count" style={{ display: 'none' }}>{bulletCount}</div>
-
-        {uiState.gameOver && (
-          <GameOverOverlay
-            level={uiState.level}
-            mode={uiState.mode}
-            stageRef={world.stageRef}
-            formattedTime={formattedTime}
-            onMainMenu={session.handleExitToMenu}
-            onPlayAgain={session.startGame}
-          />
-        )}
       </div>
 
-      <Hud
-        uiState={uiState}
-        metaLayout={metaLayout}
-        world={world}
-        formattedTime={formattedTime}
-        minimapCanvasRef={minimapCanvasRef}
+      <HUD
+        xp={uiState.xp}
+        xpMax={world.xpNeededForNextLevel(uiState.level)}
+        level={uiState.level}
+        lives={uiState.lives}
+        wave={uiState.mode === 'waves' ? world.stageRef.current : 1}
+        time={formattedTime}
+        score={uiState.score}
+        minimapRef={minimapCanvasRef}
       />
-      {uiState.testingMode && (
-        <div className="testing-mode-indicator">
-          Testing Mode ON
-        </div>
+
+      {!uiState.gameStarted && (
+        <StartScreen
+          onStartWaves={() => session.handleSelectMode('waves')}
+          onStartSurvival={() => session.handleSelectMode('survival')}
+        />
       )}
+
+      {uiState.gameOver && (
+        <GameOverOverlay
+          level={lastRun.level}
+          wave={lastRun.wave}
+          time={lastRun.time}
+          score={lastRun.score}
+          onMainMenu={session.handleExitToMenu}
+          onPlayAgain={() => session.startGame()}
+        />
+      )}
+
+      {uiState.gameStarted && !uiState.gameOver && uiState.isPaused && (
+        <PauseOverlay
+          xp={uiState.xp}
+          lives={uiState.lives}
+          largeCount={world.asteroidCountsRef.current.large}
+          mediumCount={world.asteroidCountsRef.current.medium}
+          smallCount={world.asteroidCountsRef.current.small}
+          onResume={session.handleResume}
+          onExit={session.handleExitToMenu}
+        />
+      )}
+
+      {uiState.testingMode && (
+        <div className="testing-mode-indicator">Testing Mode ON</div>
+      )}
+
+      <div data-testid="bullet-count" style={{ display: 'none' }}>{bulletCount}</div>
     </div>
   );
 }

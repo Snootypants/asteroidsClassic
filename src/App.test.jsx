@@ -11,7 +11,7 @@ describe('bullet firing limits', () => {
     render(<App />);
 
     // Click StartOverlay "Waves" button to start
-    const wavesButton = screen.getByText(/waves/i);
+    const wavesButton = screen.getByRole('button', { name: /^waves/i });
     fireEvent.click(wavesButton);
 
     // Hold Space to fire
