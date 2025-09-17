@@ -33,14 +33,13 @@ export function useResponsiveLayout({
       // Keep existing aspect ratio - DO NOT CHANGE
       const ASPECT_RATIO = 1349 / 817;
 
-      // Simple fixed margins - 14px on left, top, right
-      const MARGIN = 14;
-      let playWidth = window.innerWidth - (2 * MARGIN);  // 14px left + 14px right
-      let playHeight = window.innerHeight - MARGIN - MARGIN_BOTTOM;  // 14px top + HUD space bottom
+      // Use the same margin as HUD - read from CSS variable
+      let playWidth = window.innerWidth - (2 * hudPaddingH);  // Same as HUD left + right
+      let playHeight = window.innerHeight - hudPaddingH - MARGIN_BOTTOM;  // Same as HUD top + HUD space bottom
 
-      // Fixed positioning
-      let playX = MARGIN;  // 14px from left
-      let playY = MARGIN;  // 14px from top
+      // Fixed positioning - use same value as HUD
+      let playX = hudPaddingH;  // Same as HUD left
+      let playY = hudPaddingH;  // Same as HUD top
 
       // Minimap sizing - KEEP EXISTING LOGIC
       const MINIMAP_WIDTH_RATIO = 0.3276501112;
