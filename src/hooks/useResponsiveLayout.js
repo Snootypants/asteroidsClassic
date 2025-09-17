@@ -78,10 +78,6 @@ export function useResponsiveLayout({
       // Update CSS variable so HUD uses same margins
       document.documentElement.style.setProperty('--hud-padding-h', `${actualMargin}px`);
 
-      // Also update top margin to match
-      document.documentElement.style.setProperty('--hud-padding-top', `${actualMargin}px`);
-      playY = actualMargin; // Use same margin for top
-
       // Minimap sizing - KEEP EXISTING LOGIC
       const MINIMAP_WIDTH_RATIO = 0.3276501112;
       const worldAspect = WORLD_HEIGHT / WORLD_WIDTH;
