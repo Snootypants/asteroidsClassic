@@ -48,9 +48,17 @@ export function useResponsiveLayout({
       if (playHeight > availableHeight) {
         playHeight = availableHeight;
         playWidth = Math.round(playHeight * ASPECT_RATIO);
-        // CENTER horizontally when width is constrained
-        playX = Math.round((window.innerWidth - playWidth) / 2);
-        playY = MARGIN_TOP;
+
+        // Check if constrained width still fits with margins
+        if (playWidth > availableWidth) {
+          // Too wide even after height constraint - use available width
+          playWidth = availableWidth;
+          playHeight = Math.round(playWidth / ASPECT_RATIO);
+        }
+
+        // ALWAYS use consistent margins - NEVER center
+        playX = MARGIN_HORIZONTAL;  // Always 14px from left
+        playY = MARGIN_TOP;         // Always 14px from top
       } else {
         // Full width - use margins
         playX = MARGIN_HORIZONTAL;  // Exactly 14px from left
