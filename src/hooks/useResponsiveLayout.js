@@ -65,19 +65,6 @@ export function useResponsiveLayout({
         playY = MARGIN_TOP;         // Exactly 14px from top
       }
 
-      // Center the playfield and calculate actual margins
-      const extraHorizontalSpace = availableWidth - playWidth;
-      let actualMargin = MARGIN_HORIZONTAL; // default 14px
-
-      if (extraHorizontalSpace > 0) {
-        // Center the playfield - equal margins on both sides
-        actualMargin = MARGIN_HORIZONTAL + Math.floor(extraHorizontalSpace / 2);
-        playX = actualMargin;
-      }
-
-      // Update CSS variable so HUD uses same margins
-      document.documentElement.style.setProperty('--hud-padding-h', `${actualMargin}px`);
-
       // Minimap sizing - KEEP EXISTING LOGIC
       const MINIMAP_WIDTH_RATIO = 0.3276501112;
       const worldAspect = WORLD_HEIGHT / WORLD_WIDTH;
