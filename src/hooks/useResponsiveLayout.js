@@ -34,7 +34,7 @@ export function useResponsiveLayout({
       const ASPECT_RATIO = 1349 / 817;
 
       // Use the same margin as HUD - read from CSS variable
-      let playWidth = window.innerWidth - (2 * hudPaddingH);  // Same as HUD left + right
+      let playWidth = window.innerWidth - (2 * hudPaddingH) - 4;  // Same as HUD left + right, minus 2px borders
       let playHeight = window.innerHeight - hudPaddingH - MARGIN_BOTTOM;  // Same as HUD top + HUD space bottom
 
       // Fixed positioning - use same value as HUD
