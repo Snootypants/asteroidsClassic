@@ -65,6 +65,13 @@ export function useResponsiveLayout({
         playY = MARGIN_TOP;         // Exactly 14px from top
       }
 
+      // Center the playfield horizontally if there's extra space
+      const extraHorizontalSpace = availableWidth - playWidth;
+      if (extraHorizontalSpace > 0) {
+        // Distribute extra space equally on both sides
+        playX = MARGIN_HORIZONTAL + Math.floor(extraHorizontalSpace / 2);
+      }
+
       // Minimap sizing - KEEP EXISTING LOGIC
       const MINIMAP_WIDTH_RATIO = 0.3276501112;
       const worldAspect = WORLD_HEIGHT / WORLD_WIDTH;
