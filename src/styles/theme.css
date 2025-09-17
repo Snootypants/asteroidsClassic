@@ -9,6 +9,9 @@
   --panel-blur: saturate(100%) blur(2px);
   --radius: 10px;
   --hud-height: 110px;
+  --hud-padding-h: 14px;
+  --hud-padding-top: 0px;
+  --hud-actual-height: 112px;
 }
 
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -27,7 +30,7 @@
 
 .playfieldFrame {
   position: relative;
-  margin: 40px auto 0 auto;
+  margin: 0;
   border: 2px solid var(--line);
   box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset;
 }

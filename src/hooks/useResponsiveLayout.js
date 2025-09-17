@@ -15,55 +15,54 @@ export function useResponsiveLayout({
     rightHudX: 1200 - 80
   });
 
-  // Dynamic layout system with fixed margins and locked aspect ratio
+  // Dynamic layout system with HUD-aligned margins
   useEffect(() => {
     const updateGameLayout = () => {
-      // Fixed margins
-      const MARGIN_LEFT = 30;    // Reduced by 70%
-      const MARGIN_RIGHT = 30;   // Reduced by 70%
-      const MARGIN_TOP = 30;     // Reduced by 70%
-      const MARGIN_BOTTOM = 150; // Space for separated HUD
+      // Read CSS variables from DOM - MUST be first
+      const rootStyles = getComputedStyle(document.documentElement);
+      const hudPaddingH = parseInt(rootStyles.getPropertyValue('--hud-padding-h')) || 14;
+      const hudHeight = parseInt(rootStyles.getPropertyValue('--hud-actual-height')) || 110;
 
-      // Target aspect ratio 1349:817
-      const ASPECT_RATIO = 1349 / 817; // ≈1.6514041591
+      // Calculate margins to match HUD exactly
+      const MARGIN_HORIZONTAL = hudPaddingH;  // 14px - matches HUD sides
+      const MARGIN_TOP = hudPaddingH;         // 14px - same spacing on top
+      const MARGIN_BOTTOM = hudHeight + hudPaddingH;  // 110 + 14 = 124px total
 
-      // Minimap sizing: width is a proportion of the play area,
-      // height derived from the WORLD aspect ratio so the shape matches the world.
-      const MINIMAP_WIDTH_RATIO = 0.3276501112; // keep visual width similar to before
+      // Keep existing aspect ratio - DO NOT CHANGE
+      const ASPECT_RATIO = 1349 / 817;
 
-      // Calculate available box
-      const availableWidth = window.innerWidth - MARGIN_LEFT - MARGIN_RIGHT;
+      // Available space after margins
+      const availableWidth = window.innerWidth - (2 * MARGIN_HORIZONTAL);
       const availableHeight = window.innerHeight - MARGIN_TOP - MARGIN_BOTTOM;
 
-      // Calculate play area size maintaining aspect ratio
-      let playWidth, playHeight;
-      if (availableWidth / availableHeight > ASPECT_RATIO) {
-        // Height-constrained
+      // Start with full width (no centering!)
+      let playWidth = availableWidth;
+      let playHeight = Math.round(playWidth / ASPECT_RATIO);
+
+      // Only constrain if height doesn't fit
+      if (playHeight > availableHeight) {
         playHeight = availableHeight;
         playWidth = Math.round(playHeight * ASPECT_RATIO);
-      } else {
-        // Width-constrained
-        playWidth = availableWidth;
-        playHeight = Math.round(playWidth / ASPECT_RATIO);
       }
 
-      // Center play area within available box
-      const playX = MARGIN_LEFT + Math.round((availableWidth - playWidth) / 2);
-      const playY = MARGIN_TOP + Math.round((availableHeight - playHeight) / 2);
+      // Direct positioning - NO CENTERING
+      const playX = MARGIN_HORIZONTAL;  // Exactly 14px from left
+      const playY = MARGIN_TOP;          // Exactly 14px from top
 
-      // Calculate minimap dimensions using world aspect ratio
-      const worldAspect = WORLD_HEIGHT / WORLD_WIDTH; // H/W
+      // Minimap sizing - KEEP EXISTING LOGIC
+      const MINIMAP_WIDTH_RATIO = 0.3276501112;
+      const worldAspect = WORLD_HEIGHT / WORLD_WIDTH;
       let minimapWidth = Math.round(playWidth * MINIMAP_WIDTH_RATIO);
       let minimapHeight = Math.round(minimapWidth * worldAspect);
-      // Guard: if height would exceed a reasonable portion of play area, cap by height and recompute width
-      const MAX_MINIMAP_HEIGHT_RATIO = 0.2; // at most 20% of play height
+
+      const MAX_MINIMAP_HEIGHT_RATIO = 0.2;
       const maxMinimapHeight = Math.round(playHeight * MAX_MINIMAP_HEIGHT_RATIO);
       if (minimapHeight > maxMinimapHeight) {
         minimapHeight = maxMinimapHeight;
         minimapWidth = Math.round(minimapHeight / worldAspect);
       }
 
-      // Apply styles to play area via ref
+      // Apply calculated positions
       const playArea = playAreaRef.current;
       if (playArea) {
         playArea.style.left = `${playX}px`;
@@ -72,24 +71,23 @@ export function useResponsiveLayout({
         playArea.style.height = `${playHeight}px`;
       }
 
-      // Update canvas dimensions
+      // Canvas sizing - KEEP 4px border adjustment
       const canvas = canvasRef.current;
       if (canvas) {
-        canvas.width = playWidth - 4; // Account for 2px border on each side
+        canvas.width = playWidth - 4;
         canvas.height = playHeight - 4;
       }
 
-
-      // Store dimensions for other components
+      // Update refs - REQUIRED for game logic
       canvasWidthRef.current = playWidth - 4;
       canvasHeightRef.current = playHeight - 4;
 
-      // Update layout state for minimap positioning
+      // Keep existing layout state
       setLayout({ minimapBottom: -90 });
 
-      // Update meta layout for HUD positioning
-      const leftHudX = Math.round(playWidth * 0.25); // 25% from left edge
-      const rightHudX = Math.round(playWidth * 0.75); // 75% from left edge
+      // Keep existing meta layout calculation
+      const leftHudX = Math.round(playWidth * 0.25);
+      const rightHudX = Math.round(playWidth * 0.75);
 
       setMetaLayout({
         playWidth,
