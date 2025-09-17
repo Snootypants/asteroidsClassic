@@ -54,6 +54,8 @@ function App() {
   const [lastRun, setLastRun] = useState({ level: 1, wave: 1, time: '00:00:00', score: 0 });
 
   const world = useGameWorld({ shipRef, bulletsRef, setBulletCount, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef, setUiState });
+  const { start, pause, reset, formattedTime } = useGameTimer();
+
   const session = useGameSession({
     setUiState, shipRef, isPausedRef, bulletsRef, setBulletCount, canvasRef, cameraRef, mouseScreenRef, mousePositionRef,
     gameStartedRef, gameOverRef, scoreRef, livesRef, lastShotTimeRef, xpRef: world.xpRef, levelRef: world.levelRef,
@@ -77,8 +79,6 @@ function App() {
   });
 
   const { metaLayout } = useResponsiveLayout({ canvasRef, playAreaRef, canvasWidthRef, canvasHeightRef });
-
-  const { start, pause, reset, formattedTime } = useGameTimer();
 
   const { initializeAsteroids, generateStarfield } = world;
 
