@@ -12,7 +12,9 @@ export function useResponsiveLayout({
     playWidth: 1200,
     minimapWidth: 160,
     leftHudX: 0,
-    rightHudX: 1200 - 80
+    rightHudX: 1200 - 80,
+    playX: 14,
+    playY: 14
   });
 
   // Dynamic layout system with HUD-aligned margins
@@ -39,15 +41,21 @@ export function useResponsiveLayout({
       let playWidth = availableWidth;
       let playHeight = Math.round(playWidth / ASPECT_RATIO);
 
+      // Calculate positioning based on constraints
+      let playX, playY;
+
       // Only constrain if height doesn't fit
       if (playHeight > availableHeight) {
         playHeight = availableHeight;
         playWidth = Math.round(playHeight * ASPECT_RATIO);
+        // CENTER horizontally when width is constrained
+        playX = Math.round((window.innerWidth - playWidth) / 2);
+        playY = MARGIN_TOP;
+      } else {
+        // Full width - use margins
+        playX = MARGIN_HORIZONTAL;  // Exactly 14px from left
+        playY = MARGIN_TOP;         // Exactly 14px from top
       }
-
-      // Direct positioning - NO CENTERING
-      const playX = MARGIN_HORIZONTAL;  // Exactly 14px from left
-      const playY = MARGIN_TOP;          // Exactly 14px from top
 
       // Minimap sizing - KEEP EXISTING LOGIC
       const MINIMAP_WIDTH_RATIO = 0.3276501112;
@@ -62,14 +70,8 @@ export function useResponsiveLayout({
         minimapWidth = Math.round(minimapHeight / worldAspect);
       }
 
-      // Apply calculated positions
-      const playArea = playAreaRef.current;
-      if (playArea) {
-        playArea.style.left = `${playX}px`;
-        playArea.style.top = `${playY}px`;
-        playArea.style.width = `${playWidth}px`;
-        playArea.style.height = `${playHeight}px`;
-      }
+      // Note: Position and size are now handled via metaLayout in App.jsx
+      // No direct DOM manipulation needed here
 
       // Canvas sizing - KEEP 4px border adjustment
       const canvas = canvasRef.current;

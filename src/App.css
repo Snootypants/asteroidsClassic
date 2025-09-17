@@ -16,19 +16,7 @@ html, body {
   box-sizing: border-box;
 }
 
-.play-area {
-  position: absolute;
-  border: 2px solid white;
-  background-color: #000;
-  /* Position and size set dynamically via JavaScript */
-}
-
-.play-area canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  cursor: crosshair;
-}
+/* .play-area classes removed - unused and potentially conflicting */
 
 .minimap-canvas {
   position: absolute;
