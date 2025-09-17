@@ -33,37 +33,14 @@ export function useResponsiveLayout({
       // Keep existing aspect ratio - DO NOT CHANGE
       const ASPECT_RATIO = 1349 / 817;
 
-      // Available space after margins
-      const availableWidth = window.innerWidth - (2 * MARGIN_HORIZONTAL);
-      const availableHeight = window.innerHeight - MARGIN_TOP - MARGIN_BOTTOM;
+      // Simple fixed margins - 14px on left, top, right
+      const MARGIN = 14;
+      let playWidth = window.innerWidth - (2 * MARGIN);  // 14px left + 14px right
+      let playHeight = window.innerHeight - MARGIN - MARGIN_BOTTOM;  // 14px top + HUD space bottom
 
-      // Start with full width (no centering!)
-      let playWidth = availableWidth;
-      let playHeight = Math.round(playWidth / ASPECT_RATIO);
-
-      // Calculate positioning based on constraints
-      let playX, playY;
-
-      // Only constrain if height doesn't fit
-      if (playHeight > availableHeight) {
-        playHeight = availableHeight;
-        playWidth = Math.round(playHeight * ASPECT_RATIO);
-
-        // Check if constrained width still fits with margins
-        if (playWidth > availableWidth) {
-          // Too wide even after height constraint - use available width
-          playWidth = availableWidth;
-          playHeight = Math.round(playWidth / ASPECT_RATIO);
-        }
-
-        // ALWAYS use consistent margins - NEVER center
-        playX = MARGIN_HORIZONTAL;  // Always 14px from left
-        playY = MARGIN_TOP;         // Always 14px from top
-      } else {
-        // Full width - use margins
-        playX = MARGIN_HORIZONTAL;  // Exactly 14px from left
-        playY = MARGIN_TOP;         // Exactly 14px from top
-      }
+      // Fixed positioning
+      let playX = MARGIN;  // 14px from left
+      let playY = MARGIN;  // 14px from top
 
       // Minimap sizing - KEEP EXISTING LOGIC
       const MINIMAP_WIDTH_RATIO = 0.3276501112;
