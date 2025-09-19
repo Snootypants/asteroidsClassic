@@ -1,88 +1,94 @@
 # Asteroids Game
 
-A modern, responsive take on the classic Asteroids built with React + HTML5 Canvas.
+A modern, mouse-driven take on the classic arcade shooter built with React and an HTML5 canvas renderer. The project now ships with a polished HUD, selectable modes, and a responsive layout that keeps the playfield and UI locked together on any screen size.
 
-## Highlights (v0.1.0 – stable base)
+## Key Features
 
-- Smooth aiming without pointer lock: last screen mouse position is re‑projected to world every frame (no crosshair drift).
-- Even firing cadence: single fire‑rate constant; click = instant shot, hold/Space = steady cadence capped by `MAX_BULLETS`.
-- Tuned speeds: faster bullets, slightly slower ship for clear projectile lead.
-- Big world: 6000×5500 with an aspect‑correct minimap (one clean border). Asteroids are visible red dots; viewport box is softly dimmed.
-- HUD: Score/Lives aligned under the play area, to the left of the minimap; layout remains aligned across resizes.
-- Starfield: dense (~2000) with parallax and +20% perceived brightness.
-- Tests: 7/7 passing (collision, asteroid behavior, bullet firing limits). Vite prod build succeeds.
+- **Dual game modes**: Start on a refreshed title overlay and pick _Waves_ or _Survival_. Pause, life-loss, and game-over overlays share the same visual language.
+- **Mouse-first controls**: Aim with the cursor, shoot instantly with Space or left click, and keep a consistent fire cadence governed by a single `BULLET_FIRE_RATE` constant.
+- **XP bar + HUD alignment**: Level, lives, score, minimap, wave, and timer live inside framed panels beneath the playfield. Shared CSS custom properties (`--layout-gutter`, `--hud-stack-gap`, etc.) keep every gap synced.
+- **Responsive playfield**: `useResponsiveLayout` dynamically sizes the canvas and updates the HUD padding variables so the frame, XP bar, and panels line up perfectly across breakpoints.
+- **Large world + minimap**: 6000×5500 world with a parallax starfield, asteroid count tracking, and an aspect-correct minimap that highlights the viewport and asteroid positions.
+- **Robust game loop**: Ship, bullets, asteroids, and effects (level-up, stage clear, hyperspace jump, death explosion) are managed through dedicated hooks for clarity.
+- **Automated coverage**: Vitest suites exercise asteroid splitting, collision math, and bullet limits; GitHub Actions runs `npm test` and `npm run build` on every push to `main`.
 
 ## Controls
 
-- Mouse: aim the ship by moving the cursor
-- Left click: fire (click = single, hold = continuous)
+- Mouse: aim the ship
+- Left click or Space: fire (click once for a single shot, hold for continuous fire)
 - W: thrust forward
 - S: brake (no reverse)
-- ESC: pause
+- Escape: toggle pause
+- Tab: toggle testing mode (dev helper)
 
-Pointer lock is not required and is disabled by default.
+Pointer lock is not required—the game continuously reprojects the last screen position into world coordinates.
 
 ## Getting Started
 
 ```bash
-# Install dependencies (use your preferred package manager)
+# Install dependencies
 npm install
 
-# Start development server
+# Start the dev server
 npm run dev
 
-# Run tests
+# Run the test suite
 npm test
 
-# Build for production
+# Create a production build
 npm run build
 ```
 
-## Tuning (src/utils/constants.js)
+## Layout & Styling Tweaks
 
-- `FIRE_RATE_MS` — fire cadence for Space/LMB hold (default: 250ms)
-- `BULLET_SPEED` — bullet velocity (default: 20)
-- `SHIP_SPEED` — ship acceleration per tick (default: 0.12)
-- `WORLD_WIDTH` / `WORLD_HEIGHT` — world size (default: 6000×5500)
-- `STAR_COUNT` — base star density (default: 2000)
-- `MINIMAP_*` — sizing is computed by world aspect; border is CSS
+Key spacing variables live in `src/styles/theme.css`:
 
-After changing constants, just refresh — no rebuild needed in dev.
+- `--layout-gutter` / `--layout-top-gap` — horizontal and top margins shared by the playfield frame and HUD.
+- `--hud-stack-gap` / `--hud-panel-gap` — spacing between the XP bar and the HUD panels (and between the panels themselves).
+- `--hud-actual-height` — vertical space the responsive hook reserves under the play area.
+
+`useResponsiveLayout` reads these values, computes the current playfield size, and writes the resolved padding back to CSS so everything stays in sync. Adjust the variables and the layout will respond without touching JavaScript.
+
+## Gameplay Tuning (`src/utils/constants.js`)
+
+- `BULLET_FIRE_RATE` — cadence for Space/LMB hold (default 250 ms).
+- `BULLET_SPEED` — projectile velocity (default 20).
+- `SHIP_SPEED`, `SHIP_FRICTION`, `SHIP_DECELERATION` — thrust feel.
+- `WORLD_WIDTH` / `WORLD_HEIGHT` — game-space dimensions (default 6000×5500).
+- `STAR_COUNT`, `STAR_FIELD_MULTIPLIER`, `STAR_FIELD_SPREAD` — starfield density and distribution.
+- `INITIAL_ASTEROID_COUNT`, `XP_LEVEL_BASE`, `XP_LEVEL_GROWTH` — mode progression knobs.
+
+Refresh the browser after editing constants; Vite hot reload handles the rest.
+
+## Project Structure
+
+- `src/App.jsx` — orchestrates canvas rendering, input, game loop, overlays, and layout.
+- `src/hooks/` — domain-specific hooks (`useGameWorld`, `useGameControls`, `useGameLogic`, `useResponsiveLayout`, timers, sessions).
+- `src/components/` — ship, asteroid, bullet classes, minimap renderer, overlays, and HUD (with `src/components/ui` for React UI shells).
+- `src/styles/` — theme variables (`theme.css`) and HUD/overlay styling (`ui.css`).
+- `src/utils/` — shared constants, camera helpers, collision math.
+- `src/**/*.test.*` — Vitest suites (run with `npm test`).
+- `asteroids-game/` — a preserved earlier iteration used for historical reference and CI compatibility.
+
+## Testing & CI
+
+- **Vitest** (`npm test`): exercises collision detection, asteroid splitting, and bullet firing limits (`src/App.test.jsx`).
+- **ESLint** (`npm run lint`): optional check for code style.
+- **GitHub Actions**: `.github/workflows/ci.yml` installs dependencies with Node 20, runs the test suite, and builds on every push or PR targeting `main`.
 
 ## Assets
 
-Static assets live under `public/assets/` and are served at `${import.meta.env.BASE_URL}assets/...`.
-
-Examples:
+Runtime assets live in `public/assets/`. Use the Vite base URL helper to reference them:
 
 ```jsx
-// In a React component
 const shipUrl = `${import.meta.env.BASE_URL}assets/ship/ship1.png`;
 <img src={shipUrl} alt="Ship" />
 ```
 
-Folders are preserved (e.g., `assets/ship/`, `assets/boss/`) so you can address them predictably.
+Directory structures (e.g., `assets/ship/`, `assets/boss/`) are preserved so you can address sprites predictably.
 
-## Project Structure
+## Additional Notes
 
-- `src/App.jsx` — main loop, input, rendering, layout, UI
-- `src/components/` — `Ship`, `Asteroid`, `Bullet`, `Minimap`
-- `src/utils/` — physics, camera, constants
-- `src/*.test.*` — unit / interaction tests (Vitest + JSDOM)
-
-## Versioning
-
-- Stable baseline tag: `v0.1.0`
-- Changelog lives in the tag annotation and `IMPROVEMENTS.md`.
-
-## CI & Deploy
-
-- CI: GitHub Actions runs tests and build on every PR and push to `main` (`.github/workflows/ci.yml`).
-- GitHub Pages: pushes to `main` (and Releases) build and publish `dist/` to Pages (`.github/workflows/pages.yml`).
-  - Vite is configured with `base: './'` so assets load when served at `/REPO/`.
-  - Manual trigger is available via “Run workflow”.
-
-## Notes
-
-- The minimap uses the world aspect ratio and canvas dimensions; it draws asteroids as red dots and a softly dimmed viewport rectangle.
-- The crosshair and aiming are recomputed every frame based on the last screen mouse position to avoid edge/idle issues.
+- The minimap canvas mirrors the world aspect ratio and renders asteroids as red dots plus a dimmed viewport rectangle.
+- The crosshair stays responsive because the last mouse position is reprojection into world space every frame, even when the cursor is idle.
+- `IMPROVEMENTS.md` documents historical refactors and serves as a changelog for major polish passes.
