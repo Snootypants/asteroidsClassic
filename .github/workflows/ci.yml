@@ -16,7 +16,6 @@ jobs:
     timeout-minutes: 15
     defaults:
       run:
-        working-directory: asteroids-game
         shell: bash
     steps:
       - name: Checkout
@@ -49,9 +48,9 @@ jobs:
           node-version: 20
           cache: ${{ steps.pm.outputs.cache }}
           cache-dependency-path: |
-            asteroids-game/package-lock.json
-            asteroids-game/pnpm-lock.yaml
-            asteroids-game/yarn.lock
+            package-lock.json
+            pnpm-lock.yaml
+            yarn.lock
 
       - name: Install dependencies
         run: |
@@ -80,4 +79,3 @@ jobs:
             yarn) yarn build ;;
             npm)  npm run build ;;
           esac
-
