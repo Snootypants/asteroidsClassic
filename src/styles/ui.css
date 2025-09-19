@@ -3,7 +3,7 @@
   position: fixed;
   left: 0; right: 0; bottom: 0;
   display: grid;
-  gap: 8px;
+  gap: var(--hud-stack-gap);
   padding: var(--hud-padding-top) var(--hud-padding-h) var(--hud-padding-h);
 }
 
@@ -30,7 +30,7 @@
 .hudPanels {
   display: grid;
   grid-template-columns: 1fr 180px 1fr;
-  gap: 10px;
+  gap: var(--hud-panel-gap);
 }
 .hudPanel {
   border: 2px solid var(--line);

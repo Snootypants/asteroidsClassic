@@ -21,25 +21,29 @@ export function useResponsiveLayout({
   useEffect(() => {
     const updateGameLayout = () => {
       // Read CSS variables from DOM - MUST be first
-      const rootStyles = getComputedStyle(document.documentElement);
-      const hudPaddingH = parseInt(rootStyles.getPropertyValue('--hud-padding-h')) || 14;
-      const hudHeight = parseInt(rootStyles.getPropertyValue('--hud-actual-height')) || 110;
+      const root = document.documentElement;
+      const rootStyles = getComputedStyle(root);
+      const layoutGutter = parseInt(rootStyles.getPropertyValue('--layout-gutter')) || 14;
+      const layoutTopGap = parseInt(rootStyles.getPropertyValue('--layout-top-gap')) || layoutGutter;
+      const hudHeight = parseInt(rootStyles.getPropertyValue('--hud-actual-height')) || 130;
 
-      // Calculate margins to match HUD exactly
-      const MARGIN_HORIZONTAL = hudPaddingH;  // 14px - matches HUD sides
-      const MARGIN_TOP = hudPaddingH;         // 14px - same spacing on top
-      const MARGIN_BOTTOM = hudHeight + hudPaddingH;  // 110 + 14 = 124px total
+      const frameBorder = 4; // Account for 2px border on each side of the playfield frame
 
-      // Keep existing aspect ratio - DO NOT CHANGE
-      const ASPECT_RATIO = 1349 / 817;
+      const horizontalMargin = layoutGutter;
+      const topMargin = layoutTopGap;
+      const bottomMargin = hudHeight + layoutGutter; // Space for XP bar + HUD stack
 
-      // Use the same margin as HUD - read from CSS variable
-      let playWidth = window.innerWidth - (2 * hudPaddingH) - 4;  // Same as HUD left + right, minus 2px borders
-      let playHeight = window.innerHeight - hudPaddingH - MARGIN_BOTTOM;  // Same as HUD top + HUD space bottom
+      let playWidth = window.innerWidth - (horizontalMargin * 2) - frameBorder;
+      let playHeight = window.innerHeight - topMargin - bottomMargin - frameBorder;
 
-      // Fixed positioning - use same value as HUD
-      let playX = hudPaddingH;  // Same as HUD left
-      let playY = hudPaddingH;  // Same as HUD top
+      playWidth = Math.max(0, playWidth);
+      playHeight = Math.max(0, playHeight);
+
+      const playX = horizontalMargin;
+      const playY = topMargin;
+
+      root.style.setProperty('--hud-padding-h', `${horizontalMargin}px`);
+      root.style.setProperty('--hud-padding-top', `${topMargin}px`);
 
       // Minimap sizing - KEEP EXISTING LOGIC
       const MINIMAP_WIDTH_RATIO = 0.3276501112;
@@ -60,13 +64,13 @@ export function useResponsiveLayout({
       // Canvas sizing - KEEP 4px border adjustment
       const canvas = canvasRef.current;
       if (canvas) {
-        canvas.width = playWidth - 4;
-        canvas.height = playHeight - 4;
+        canvas.width = Math.max(0, playWidth - frameBorder);
+        canvas.height = Math.max(0, playHeight - frameBorder);
       }
 
       // Update refs - REQUIRED for game logic
-      canvasWidthRef.current = playWidth - 4;
-      canvasHeightRef.current = playHeight - 4;
+      canvasWidthRef.current = Math.max(0, playWidth - frameBorder);
+      canvasHeightRef.current = Math.max(0, playHeight - frameBorder);
 
       // Keep existing layout state
       setLayout({ minimapBottom: -90 });

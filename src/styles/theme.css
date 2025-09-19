@@ -1,4 +1,8 @@
 :root {
+  --layout-gutter: 14px;
+  --layout-top-gap: var(--layout-gutter);
+  --hud-stack-gap: 8px;
+  --hud-panel-gap: var(--hud-stack-gap);
   --fg: #e8e8e8;
   --fg-dim: #a9a9a9;
   --bg: #050607;
@@ -9,8 +13,8 @@
   --panel-blur: saturate(100%) blur(2px);
   --radius: 10px;
   --hud-height: 110px;
-  --hud-padding-h: 14px;
-  --hud-padding-top: 0px;
+  --hud-padding-h: var(--layout-gutter);
+  --hud-padding-top: var(--layout-top-gap);
   --hud-actual-height: 130px;
 }
 
