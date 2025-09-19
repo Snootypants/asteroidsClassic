@@ -5,7 +5,20 @@ import { ASTEROID_CONFIG, WORLD_CONFIG } from '../utils/constants';
 const { INITIAL_ASTEROID_COUNT, ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL } = ASTEROID_CONFIG;
 const { WORLD_WIDTH, WORLD_HEIGHT } = WORLD_CONFIG;
 
-export const useAsteroids = (gameStartedRef, gameOverRef, stageClearedRef, hyperSpaceJumpEffectRef, shipRef, stageRef, baseAsteroidCountRef, bulletsRef, setBulletCount, generateStarfield, starsRef, stageClearEffectRef) => {
+export const useAsteroids = (
+  gameStartedRef,
+  gameOverRef,
+  stageClearedRef,
+  hyperSpaceJumpEffectRef,
+  shipRef,
+  stageRef,
+  baseAsteroidCountRef,
+  bulletsRef,
+  setBulletCount,
+  generateStarfield,
+  starsRef,
+  stageClearEffectRef
+) => {
   const asteroidsRef = useRef([]);
   const asteroidCountsRef = useRef({ large: 0, medium: 0, small: 0 });
 
@@ -18,6 +31,22 @@ export const useAsteroids = (gameStartedRef, gameOverRef, stageClearedRef, hyper
     }
     asteroidsRef.current = initialAsteroids;
   }, []);
+
+  const startNewStage = useCallback((stageNumber, asteroidCount) => {
+    stageRef.current = stageNumber;
+    baseAsteroidCountRef.current = asteroidCount;
+    bulletsRef.current = [];
+    setBulletCount(0);
+    if (shipRef.current) {
+      shipRef.current.x = WORLD_WIDTH / 2;
+      shipRef.current.y = WORLD_HEIGHT / 2;
+      shipRef.current.vx = 0;
+      shipRef.current.vy = 0;
+    }
+    initializeAsteroids(asteroidCount);
+    stageClearedRef.current = false;
+    generateStarfield();
+  }, [initializeAsteroids, generateStarfield, shipRef, stageRef, baseAsteroidCountRef, bulletsRef, setBulletCount]);
 
   const updateAsteroidCounts = useCallback(() => {
     const counts = { large: 0, medium: 0, small: 0 };
@@ -51,23 +80,18 @@ export const useAsteroids = (gameStartedRef, gameOverRef, stageClearedRef, hyper
         }
       }, 1000);
     }
-  }, [gameStartedRef, gameOverRef, stageClearedRef, hyperSpaceJumpEffectRef, shipRef, stageRef, baseAsteroidCountRef, startNewStage]);
-
-  const startNewStage = useCallback((stageNumber, asteroidCount) => {
-    stageRef.current = stageNumber;
-    baseAsteroidCountRef.current = asteroidCount;
-    bulletsRef.current = [];
-    setBulletCount(0);
-    if (shipRef.current) {
-      shipRef.current.x = WORLD_WIDTH / 2;
-      shipRef.current.y = WORLD_HEIGHT / 2;
-      shipRef.current.vx = 0;
-      shipRef.current.vy = 0;
-    }
-    initializeAsteroids(asteroidCount);
-    stageClearedRef.current = false;
-    generateStarfield();
-  }, [initializeAsteroids, generateStarfield, shipRef, stageRef, baseAsteroidCountRef, bulletsRef, setBulletCount]);
+  }, [
+    gameStartedRef,
+    gameOverRef,
+    stageClearedRef,
+    hyperSpaceJumpEffectRef,
+    shipRef,
+    stageRef,
+    baseAsteroidCountRef,
+    startNewStage,
+    starsRef,
+    stageClearEffectRef
+  ]);
 
   return { asteroidsRef, asteroidCountsRef, initializeAsteroids, updateAsteroidCounts, startNewStage };
 };
