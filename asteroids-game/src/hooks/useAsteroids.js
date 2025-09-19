@@ -32,7 +32,18 @@ export const useAsteroids = (
     asteroidsRef.current = initialAsteroids;
   }, []);
 
-  const startNewStage = useCallback((stageNumber, asteroidCount) => {
+  const startNewStage = useCallback(startNewStageImpl, [
+    initializeAsteroids,
+    generateStarfield,
+    shipRef,
+    stageRef,
+    baseAsteroidCountRef,
+    bulletsRef,
+    setBulletCount,
+    stageClearedRef
+  ]);
+
+  function startNewStageImpl(stageNumber, asteroidCount) {
     stageRef.current = stageNumber;
     baseAsteroidCountRef.current = asteroidCount;
     bulletsRef.current = [];
@@ -46,7 +57,7 @@ export const useAsteroids = (
     initializeAsteroids(asteroidCount);
     stageClearedRef.current = false;
     generateStarfield();
-  }, [initializeAsteroids, generateStarfield, shipRef, stageRef, baseAsteroidCountRef, bulletsRef, setBulletCount]);
+  }
 
   const updateAsteroidCounts = useCallback(() => {
     const counts = { large: 0, medium: 0, small: 0 };
@@ -74,7 +85,7 @@ export const useAsteroids = (
             ship.angle,
             stageRef.current,
             baseAsteroidCountRef.current,
-            startNewStage
+            startNewStageImpl
           );
           hyperSpaceJumpEffectRef.current.initStarVelocities(starsRef.current);
         }
@@ -88,7 +99,7 @@ export const useAsteroids = (
     shipRef,
     stageRef,
     baseAsteroidCountRef,
-    startNewStage,
+    startNewStageImpl,
     starsRef,
     stageClearEffectRef
   ]);
