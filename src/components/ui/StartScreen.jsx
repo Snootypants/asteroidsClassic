@@ -11,7 +11,7 @@ export default function StartScreen({ onStartWaves, onStartSurvival }) {
           <button className="btn" onClick={onStartSurvival}>Survival</button>
         </div>
         <div className="help">
-          <p className="mono">Controls: ← → rotate, ↑ thrust, Space fire</p>
+          <p className="mono">Controls: Aim with the mouse. Shoot with Space or left click.</p>
         </div>
       </div>
     </div>
