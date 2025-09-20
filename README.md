@@ -8,6 +8,7 @@ A modern, mouse-driven take on the classic arcade shooter built with React and a
 - **Mouse-first controls**: Aim with the cursor, shoot instantly with Space or left click, and keep a consistent fire cadence governed by a single `BULLET_FIRE_RATE` constant.
 - **XP bar + HUD alignment**: Level, lives, currency, minimap, wave, and timer live inside framed panels beneath the playfield. Shared CSS custom properties (`--layout-gutter`, `--hud-stack-gap`, etc.) keep every gap synced.
 - **Loot drops**: Every asteroid break spawns XP orbs and a chance for currency shards that drift briefly, then magnetize to the ship. Currency replaces score on the HUD and feeds the end-run summary.
+- **Mode pacing**: Waves grants a five second "hyper jump" loot grace (with a countdown banner and streaking pickups) while Survival continuously spawns faster asteroids on a capped speed curve.
 - **Responsive playfield**: `useResponsiveLayout` dynamically sizes the canvas and updates the HUD padding variables so the frame, XP bar, and panels line up perfectly across breakpoints.
 - **Large world + minimap**: 6000×5500 world with a parallax starfield, asteroid count tracking, and an aspect-correct minimap that highlights the viewport and asteroid positions.
 - **Robust game loop**: Ship, bullets, asteroids, and effects (level-up, stage clear, hyperspace jump, death explosion) are managed through dedicated hooks for clarity.

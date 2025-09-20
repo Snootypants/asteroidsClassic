@@ -47,7 +47,7 @@ export function useGameSession({
     setBulletCount(0);
     stageRef.current = 1;
     baseAsteroidCountRef.current = INITIAL_ASTEROID_COUNT;
-    survivalStateRef.current = { lastSpawnMs: 0, speedMultiplier: 1, spawnIntervalMs: 2000 };
+    survivalStateRef.current = { lastSpawnMs: 0, speedMultiplier: 1, spawnIntervalMs: 2000, spawnCount: 0 };
 
     // Reset camera
     const camera = cameraRef.current;

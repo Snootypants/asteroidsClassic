@@ -50,9 +50,16 @@ export const PICKUP_ATTRACT_RADIUS = 220;   // Distance where pickups home to sh
 export const PICKUP_COLLECT_RADIUS = 26;    // Distance to actually collect
 export const PICKUP_MAX_SPEED = 6;          // Cap attraction velocity
 export const PICKUP_LIFETIME_FRAMES = 60 * 15; // 15 seconds before fading
+export const PICKUP_HYPER_SPEED = 20;       // Burst speed when hyperspace kicks in
+export const PICKUP_HYPER_ACCEL = 1.06;     // Exponential speed up for streak effect
+export const PICKUP_HYPER_DURATION = 90;    // Frames before pickup expires in hyperspace
 export const XP_LEVEL_BASE = 300;           // XP needed for level 1→2
 export const XP_LEVEL_GROWTH = 1.25;        // Each level requires 25% more XP than previous
 export const HYPER_JUMP_COUNTDOWN_MS = 5000; // Grace period before waves hyperspace
+export const SURVIVAL_SPEED_LIMIT_MULTIPLIER = Math.pow(1.05, 60); // Match old 2 min scaling
+export const SURVIVAL_SPEED_CURVE_TAU = 20;  // Controls curve steepness
+export const WAVE_SPEED_LIMIT_MULTIPLIER = Math.pow(1.1, 10);      // 10% per wave cap analogue
+export const WAVE_SPEED_CURVE_TAU = 4;       // Controls diminishing returns per wave
 
 // Level-up effects
 export const LEVELUP_PARTICLES = 225;       // +50% bigger burst

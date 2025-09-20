@@ -5,6 +5,9 @@ import {
   PICKUP_LIFETIME_FRAMES,
   PICKUP_MAX_SPEED,
   PICKUP_POP_SPEED,
+  PICKUP_HYPER_SPEED,
+  PICKUP_HYPER_ACCEL,
+  PICKUP_HYPER_DURATION,
   WORLD_WIDTH,
   WORLD_HEIGHT,
 } from '../utils/constants.js';
@@ -24,6 +27,8 @@ export class Pickup {
     this.life = 0;
     this.collected = false;
     this.baseRadius = type === 'xp' ? 8 : 9;
+    this.hyper = false;
+    this.hyperTicks = 0;
   }
 
   update(ship) {
@@ -32,13 +37,24 @@ export class Pickup {
     this.x += this.vx;
     this.y += this.vy;
 
-    if (this.x < 0) this.x += WORLD_WIDTH;
-    else if (this.x > WORLD_WIDTH) this.x -= WORLD_WIDTH;
-    if (this.y < 0) this.y += WORLD_HEIGHT;
-    else if (this.y > WORLD_HEIGHT) this.y -= WORLD_HEIGHT;
+    if (!this.hyper) {
+      if (this.x < 0) this.x += WORLD_WIDTH;
+      else if (this.x > WORLD_WIDTH) this.x -= WORLD_WIDTH;
+      if (this.y < 0) this.y += WORLD_HEIGHT;
+      else if (this.y > WORLD_HEIGHT) this.y -= WORLD_HEIGHT;
+    }
 
     this.vx *= PICKUP_DRAG;
     this.vy *= PICKUP_DRAG;
+
+    if (this.hyper) {
+      this.hyperTicks += 1;
+      this.vx *= PICKUP_HYPER_ACCEL;
+      this.vy *= PICKUP_HYPER_ACCEL;
+      if (this.hyperTicks > PICKUP_HYPER_DURATION) {
+        return 'expired';
+      }
+    }
 
     if (ship) {
       const dx = ship.x - this.x;
@@ -69,6 +85,14 @@ export class Pickup {
     }
 
     return 'active';
+  }
+
+  startHyperStreak(angle) {
+    this.hyper = true;
+    this.hyperTicks = 0;
+    // Blast opposite of ship heading so it streaks off-screen
+    this.vx = -Math.cos(angle) * PICKUP_HYPER_SPEED;
+    this.vy = -Math.sin(angle) * PICKUP_HYPER_SPEED;
   }
 
   draw(ctx) {

@@ -6,7 +6,8 @@ import { checkCollision, wrapPosition } from '../utils/collision.js';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, MAX_BULLETS,
          SHIP_DECELERATION, SHIP_FRICTION,
          WORLD_WIDTH, WORLD_HEIGHT, DEATH_PAUSE_MS,
-         ASTEROID_SPEED, ASTEROID_SIZE_LARGE } from '../utils/constants.js';
+         ASTEROID_SPEED, ASTEROID_SIZE_LARGE,
+         SURVIVAL_SPEED_LIMIT_MULTIPLIER, SURVIVAL_SPEED_CURVE_TAU } from '../utils/constants.js';
 
 export function useGameLogic({
   gameOverRef,
@@ -101,9 +102,11 @@ export function useGameLogic({
       }
       if (nowMs - state.lastSpawnMs >= interval) {
         state.lastSpawnMs = nowMs;
-        const multiplier = state.speedMultiplier ?? 1;
+        state.spawnCount = (state.spawnCount ?? 0) + 1;
+        const progress = 1 - Math.exp(-(state.spawnCount) / SURVIVAL_SPEED_CURVE_TAU);
+        const multiplier = 1 + (SURVIVAL_SPEED_LIMIT_MULTIPLIER - 1) * progress;
         spawnSurvivalAsteroid(multiplier);
-        state.speedMultiplier = multiplier * 1.05;
+        state.speedMultiplier = multiplier;
       }
     }
 

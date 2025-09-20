@@ -6,7 +6,8 @@ import { WORLD_WIDTH, WORLD_HEIGHT, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BR
          MIN_PARALLAX, MAX_PARALLAX, INITIAL_ASTEROID_COUNT, XP_LEVEL_BASE, XP_LEVEL_GROWTH,
          ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL,
          XP_PICKUP_VALUE, XP_DROP_WEIGHTS, CURRENCY_DROP_CHANCE, CURRENCY_DROP_WEIGHTS,
-         HYPER_JUMP_COUNTDOWN_MS } from '../utils/constants.js';
+         HYPER_JUMP_COUNTDOWN_MS, SURVIVAL_SPEED_LIMIT_MULTIPLIER, SURVIVAL_SPEED_CURVE_TAU,
+         WAVE_SPEED_LIMIT_MULTIPLIER, WAVE_SPEED_CURVE_TAU } from '../utils/constants.js';
 
 export function useGameWorld({
   shipRef,
@@ -31,6 +32,7 @@ export function useGameWorld({
   const hyperCountdownRef = useRef(0);
   const hyperCountdownIntervalRef = useRef(null);
   const hyperCountdownTimeoutRef = useRef(null);
+  const waveSpeedMultiplierRef = useRef(1);
 
   const pickCurrencyAmount = useCallback(() => {
     const totalWeight = CURRENCY_DROP_WEIGHTS.reduce((sum, entry) => sum + entry.weight, 0);
@@ -56,6 +58,12 @@ export function useGameWorld({
       }
     }
     return XP_DROP_WEIGHTS[XP_DROP_WEIGHTS.length - 1].amount;
+  }, []);
+
+  const computeWaveSpeedMultiplier = useCallback((stageNumber) => {
+    const effectiveStage = Math.max(0, stageNumber - 1);
+    const progress = 1 - Math.exp(-effectiveStage / WAVE_SPEED_CURVE_TAU);
+    return 1 + (WAVE_SPEED_LIMIT_MULTIPLIER - 1) * progress;
   }, []);
 
   // Generate stars with bell curve distribution
@@ -84,15 +92,28 @@ export function useGameWorld({
   }, []);
 
   // Reusable function to initialize asteroids
-  const initializeAsteroids = useCallback((count = INITIAL_ASTEROID_COUNT) => {
+  const initializeAsteroids = useCallback((count = INITIAL_ASTEROID_COUNT, explicitMultiplier) => {
     const initialAsteroids = [];
+    let multiplier = explicitMultiplier;
+    if (modeRef?.current === 'waves') {
+      const stageNumber = stageRef.current ?? 1;
+      if (multiplier === undefined) {
+        waveSpeedMultiplierRef.current = computeWaveSpeedMultiplier(stageNumber);
+        multiplier = waveSpeedMultiplierRef.current;
+      }
+    } else if (multiplier === undefined) {
+      multiplier = 1;
+    }
     for (let i = 0; i < count; i++) {
       const x = Math.random() * WORLD_WIDTH;
       const y = Math.random() * WORLD_HEIGHT;
-      initialAsteroids.push(new Asteroid(x, y));
+      const asteroid = new Asteroid(x, y);
+      asteroid.vx *= multiplier;
+      asteroid.vy *= multiplier;
+      initialAsteroids.push(asteroid);
     }
     asteroidsRef.current = initialAsteroids;
-  }, []);
+  }, [modeRef, stageRef, computeWaveSpeedMultiplier]);
 
   const xpNeededForNextLevel = useCallback((level) => Math.round(XP_LEVEL_BASE * Math.pow(XP_LEVEL_GROWTH, Math.max(0, level - 1))), []);
 
@@ -207,7 +228,12 @@ export function useGameWorld({
     }
 
     // Initialize new asteroids for the stage
-    initializeAsteroids(asteroidCount);
+    let speedMultiplier = 1;
+    if (modeRef?.current === 'waves') {
+      waveSpeedMultiplierRef.current = computeWaveSpeedMultiplier(stageNumber);
+      speedMultiplier = waveSpeedMultiplierRef.current;
+    }
+    initializeAsteroids(asteroidCount, speedMultiplier);
 
     // Regenerate starfield for variety
     generateStarfield();
@@ -216,7 +242,7 @@ export function useGameWorld({
     setUiState(prev => ({ ...prev, stage: stageNumber }));
     clearPickups();
     clearHyperCountdown();
-  }, [initializeAsteroids, generateStarfield, bulletsRef, setBulletCount, shipRef, setUiState, clearPickups, clearHyperCountdown]);
+  }, [initializeAsteroids, generateStarfield, bulletsRef, setBulletCount, shipRef, setUiState, clearPickups, clearHyperCountdown, modeRef, computeWaveSpeedMultiplier]);
 
   const startHyperCountdown = useCallback(() => {
     clearHyperCountdown();
@@ -238,6 +264,11 @@ export function useGameWorld({
       setUiState(prev => ({ ...prev, hyperCountdownMs: 0 }));
 
       if (shipRef.current && hyperSpaceJumpEffectRef.current) {
+        pickupsRef.current.forEach(pickup => {
+          if (pickup?.startHyperStreak) {
+            pickup.startHyperStreak(shipRef.current.angle);
+          }
+        });
         hyperSpaceJumpEffectRef.current.trigger(
           shipRef.current.angle,
           stageRef.current,

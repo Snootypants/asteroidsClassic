@@ -1,7 +1,9 @@
 import React from 'react';
 
-export default function HUD({ xp, xpMax, level, lives, wave, time, currency, minimapRef }) {
+export default function HUD({ xp, xpMax, level, lives, wave, time, currency, minimapRef, mode }) {
   const pct = Math.max(0, Math.min(1, xpMax ? xp / xpMax : 0));
+  const showWave = mode === 'waves';
+  const showTime = mode === 'survival';
 
   return (
     <div className="hudRoot">
@@ -31,14 +33,18 @@ export default function HUD({ xp, xpMax, level, lives, wave, time, currency, min
         </div>
 
         <div className="hudPanel">
-          <div className="hudColumn">
-            <div className="hudLabel">Wave</div>
-            <div className="hudValue">{wave}</div>
-          </div>
-          <div className="hudColumn">
-            <div className="hudLabel">Time</div>
-            <div className="hudValue mono">{time}</div>
-          </div>
+          {showWave && (
+            <div className="hudColumn">
+              <div className="hudLabel">Wave</div>
+              <div className="hudValue">{wave}</div>
+            </div>
+          )}
+          {showTime && (
+            <div className="hudColumn">
+              <div className="hudLabel">Time</div>
+              <div className="hudValue mono">{time}</div>
+            </div>
+          )}
         </div>
       </div>
     </div>

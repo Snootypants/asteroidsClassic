@@ -202,6 +202,7 @@ function App() {
         time={formattedTime}
         currency={uiState.currency}
         minimapRef={minimapCanvasRef}
+        mode={uiState.mode}
       />
 
       {countdownActive && (
