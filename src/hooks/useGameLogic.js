@@ -1,10 +1,12 @@
 import { useCallback, useRef } from 'react';
 import { Bullet } from '../components/Bullet.js';
 import { Ship } from '../components/Ship.js';
+import { Asteroid } from '../components/Asteroid.js';
 import { checkCollision, wrapPosition } from '../utils/collision.js';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BULLET_FIRE_RATE, MAX_BULLETS,
-         SHIP_DECELERATION, SHIP_FRICTION, XP_PER_ASTEROID, SCORE_PER_ASTEROID,
-         WORLD_WIDTH, WORLD_HEIGHT, DEATH_PAUSE_MS } from '../utils/constants.js';
+         SHIP_DECELERATION, SHIP_FRICTION,
+         WORLD_WIDTH, WORLD_HEIGHT, DEATH_PAUSE_MS,
+         ASTEROID_SPEED, ASTEROID_SIZE_LARGE } from '../utils/constants.js';
 
 export function useGameLogic({
   gameOverRef,
@@ -22,18 +24,56 @@ export function useGameLogic({
   setBulletCount,
   isMouseDownRef,
   lastShotTimeRef,
-  scoreRef,
   livesRef,
-  addXp,
+  spawnPickups,
+  updatePickups,
   levelUpEffectRef,
   stageClearEffectRef,
   hyperSpaceJumpEffectRef,
   deathExplosionRef,
   starsRef,
   updateAsteroidCounts,
+  modeRef,
+  survivalStateRef,
 }, options = {}) {
   const { onLifeLost } = options;
   const deathPauseUntilRef = useRef(0);
+
+  const spawnSurvivalAsteroid = useCallback((speedMultiplier = 1) => {
+    const margin = 200;
+    const edge = Math.floor(Math.random() * 4);
+    let x;
+    let y;
+    switch (edge) {
+      case 0:
+        x = Math.random() * WORLD_WIDTH;
+        y = -margin;
+        break;
+      case 1:
+        x = Math.random() * WORLD_WIDTH;
+        y = WORLD_HEIGHT + margin;
+        break;
+      case 2:
+        x = -margin;
+        y = Math.random() * WORLD_HEIGHT;
+        break;
+      default:
+        x = WORLD_WIDTH + margin;
+        y = Math.random() * WORLD_HEIGHT;
+        break;
+    }
+
+    const asteroid = new Asteroid(x, y, ASTEROID_SIZE_LARGE);
+    const target = shipRef.current ? { x: shipRef.current.x, y: shipRef.current.y } : { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 };
+    const dx = target.x - x;
+    const dy = target.y - y;
+    const distance = Math.hypot(dx, dy) || 1;
+    const speed = ASTEROID_SPEED * speedMultiplier;
+    asteroid.vx = (dx / distance) * speed;
+    asteroid.vy = (dy / distance) * speed;
+    asteroidsRef.current.push(asteroid);
+    updateAsteroidCounts();
+  }, [asteroidsRef, shipRef, updateAsteroidCounts]);
 
   const update = useCallback(() => {
     // Allow death explosion to continue updating even during game over
@@ -51,6 +91,20 @@ export function useGameLogic({
       // Keep updating death explosion during pause
       deathExplosionRef.current.update();
       return; // skip physics, input, and collisions this tick
+    }
+
+    if (modeRef?.current === 'survival') {
+      const state = survivalStateRef.current;
+      const interval = state?.spawnIntervalMs ?? 2000;
+      if (!state.lastSpawnMs) {
+        state.lastSpawnMs = nowMs;
+      }
+      if (nowMs - state.lastSpawnMs >= interval) {
+        state.lastSpawnMs = nowMs;
+        const multiplier = state.speedMultiplier ?? 1;
+        spawnSurvivalAsteroid(multiplier);
+        state.speedMultiplier = multiplier * 1.05;
+      }
     }
 
     // Update camera zoom
@@ -145,8 +199,7 @@ export function useGameLogic({
           if (!bulletsToRemove.includes(bi)) bulletsToRemove.push(bi);
           if (!asteroidsToRemove.includes(ai)) asteroidsToRemove.push(ai);
           newAsteroids.push(...asteroid.split());
-          scoreRef.current += SCORE_PER_ASTEROID;
-          addXp(XP_PER_ASTEROID);
+          spawnPickups(asteroid.x, asteroid.y);
         }
       });
     });
@@ -211,6 +264,8 @@ export function useGameLogic({
     hyperSpaceJumpEffectRef.current.updateStars(starsRef.current);
     deathExplosionRef.current.update();
 
+    updatePickups(shipRef.current);
+
     // Update asteroid counts and check for stage clear
     updateAsteroidCounts();
   }, [
@@ -229,15 +284,18 @@ export function useGameLogic({
     setBulletCount,
     isMouseDownRef,
     lastShotTimeRef,
-    scoreRef,
     livesRef,
-    addXp,
+    spawnPickups,
+    updatePickups,
     levelUpEffectRef,
     stageClearEffectRef,
     hyperSpaceJumpEffectRef,
     deathExplosionRef,
     starsRef,
     updateAsteroidCounts,
+    modeRef,
+    survivalStateRef,
+    spawnSurvivalAsteroid,
     onLifeLost,
   ]);
 

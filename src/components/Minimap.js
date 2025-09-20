@@ -1,7 +1,7 @@
 import { WORLD_WIDTH, WORLD_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../utils/constants.js';
 
 export class Minimap {
-  static draw(ctx, ship, asteroids, camera) {
+  static draw(ctx, ship, asteroids, pickups, camera) {
     // Use the actual canvas dimensions so resizing stays correct
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
@@ -16,6 +16,22 @@ export class Minimap {
     const scaleX = w / WORLD_WIDTH;
     const scaleY = h / WORLD_HEIGHT;
     
+    if (pickups?.length) {
+      ctx.save();
+      pickups.forEach((pickup) => {
+        if (!pickup) return;
+        const px = pickup.x * scaleX;
+        const py = pickup.y * scaleY;
+        ctx.beginPath();
+        ctx.fillStyle = pickup.type === 'xp'
+          ? 'rgba(156, 240, 109, 0.6)'
+          : 'rgba(120, 200, 255, 0.6)';
+        ctx.arc(px, py, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
     // Draw asteroids as more visible red dots
     ctx.fillStyle = '#ff3b30';
     asteroids.forEach(asteroid => {

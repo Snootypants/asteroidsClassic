@@ -4,11 +4,12 @@ export function useGameLoop({
   update,
   render,
   setUiState,
-  scoreRef,
+  currencyRef,
   livesRef,
   gameOverRef,
   xpRef,
   levelRef,
+  hyperCountdownRef,
 }) {
   const requestRef = useRef();
 
@@ -20,11 +21,12 @@ export function useGameLoop({
       // Throttle UI updates - only update when values actually change
       setUiState((prev) => ({
         ...prev,
-        score: scoreRef.current,
+        currency: currencyRef.current,
         lives: livesRef.current,
         gameOver: gameOverRef.current,
         xp: xpRef.current,
         level: levelRef.current,
+        hyperCountdownMs: hyperCountdownRef?.current ?? 0,
       }));
 
       requestRef.current = requestAnimationFrame(loop);
@@ -36,5 +38,5 @@ export function useGameLoop({
         cancelAnimationFrame(requestRef.current);
       }
     };
-  }, [update, render, setUiState, scoreRef, livesRef, gameOverRef, xpRef, levelRef]);
+  }, [update, render, setUiState, currencyRef, livesRef, gameOverRef, xpRef, levelRef, hyperCountdownRef]);
 }

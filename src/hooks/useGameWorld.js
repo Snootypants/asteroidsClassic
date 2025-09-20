@@ -1,16 +1,21 @@
 import { useRef, useCallback } from 'react';
 import { Asteroid } from '../components/Asteroid.js';
+import { Pickup } from '../components/Pickup.js';
 import { WORLD_WIDTH, WORLD_HEIGHT, STAR_COUNT, STAR_MIN_BRIGHTNESS, STAR_MAX_BRIGHTNESS,
          STAR_LARGE_THRESHOLD, STAR_MEDIUM_THRESHOLD, STAR_FIELD_MULTIPLIER, STAR_FIELD_SPREAD,
          MIN_PARALLAX, MAX_PARALLAX, INITIAL_ASTEROID_COUNT, XP_LEVEL_BASE, XP_LEVEL_GROWTH,
-         ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL } from '../utils/constants.js';
+         ASTEROID_SIZE_LARGE, ASTEROID_SIZE_MEDIUM, ASTEROID_SIZE_SMALL,
+         XP_PICKUP_VALUE, XP_DROP_WEIGHTS, CURRENCY_DROP_CHANCE, CURRENCY_DROP_WEIGHTS,
+         HYPER_JUMP_COUNTDOWN_MS } from '../utils/constants.js';
 
 export function useGameWorld({
   shipRef,
   bulletsRef,
   setBulletCount,
+  levelUpEffectRef,
   stageClearEffectRef,
   hyperSpaceJumpEffectRef,
+  modeRef,
   setUiState,
 }) {
   const starsRef = useRef([]);
@@ -21,6 +26,37 @@ export function useGameWorld({
   const stageRef = useRef(1);
   const baseAsteroidCountRef = useRef(INITIAL_ASTEROID_COUNT);
   const stageClearedRef = useRef(false);
+  const currencyRef = useRef(0);
+  const pickupsRef = useRef([]);
+  const hyperCountdownRef = useRef(0);
+  const hyperCountdownIntervalRef = useRef(null);
+  const hyperCountdownTimeoutRef = useRef(null);
+
+  const pickCurrencyAmount = useCallback(() => {
+    const totalWeight = CURRENCY_DROP_WEIGHTS.reduce((sum, entry) => sum + entry.weight, 0);
+    const roll = Math.random() * totalWeight;
+    let cumulative = 0;
+    for (const entry of CURRENCY_DROP_WEIGHTS) {
+      cumulative += entry.weight;
+      if (roll <= cumulative) {
+        return entry.amount;
+      }
+    }
+    return CURRENCY_DROP_WEIGHTS[CURRENCY_DROP_WEIGHTS.length - 1].amount;
+  }, []);
+
+  const pickXpCount = useCallback(() => {
+    const totalWeight = XP_DROP_WEIGHTS.reduce((sum, entry) => sum + entry.weight, 0);
+    const roll = Math.random() * totalWeight;
+    let cumulative = 0;
+    for (const entry of XP_DROP_WEIGHTS) {
+      cumulative += entry.weight;
+      if (roll <= cumulative) {
+        return entry.amount;
+      }
+    }
+    return XP_DROP_WEIGHTS[XP_DROP_WEIGHTS.length - 1].amount;
+  }, []);
 
   // Generate stars with bell curve distribution
   const generateStarfield = useCallback(() => {
@@ -62,8 +98,14 @@ export function useGameWorld({
 
   const triggerLevelUp = useCallback((newLevel) => {
     levelRef.current = newLevel;
+    const ship = shipRef?.current;
+    if (levelUpEffectRef?.current?.trigger) {
+      const x = ship?.x ?? WORLD_WIDTH / 2;
+      const y = ship?.y ?? WORLD_HEIGHT / 2;
+      levelUpEffectRef.current.trigger(x, y, newLevel);
+    }
     setUiState(prev => ({ ...prev, level: newLevel }));
-  }, [setUiState]);
+  }, [setUiState, levelUpEffectRef, shipRef]);
 
   const addXp = useCallback((amount) => {
     xpRef.current += amount;
@@ -82,6 +124,69 @@ export function useGameWorld({
     // Update UI
     setUiState(prev => ({ ...prev, xp: xpRef.current }));
   }, [xpNeededForNextLevel, triggerLevelUp, setUiState]);
+
+  const addCurrency = useCallback((amount) => {
+    currencyRef.current += amount;
+    setUiState(prev => ({ ...prev, currency: currencyRef.current }));
+  }, [setUiState]);
+
+  const spawnPickups = useCallback((x, y) => {
+    const jitter = () => {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 8 + Math.random() * 16;
+      return {
+        x: x + Math.cos(angle) * radius,
+        y: y + Math.sin(angle) * radius,
+      };
+    };
+
+    const xpCount = pickXpCount();
+    for (let i = 0; i < xpCount; i += 1) {
+      const xpPos = jitter();
+      pickupsRef.current.push(new Pickup({ type: 'xp', value: XP_PICKUP_VALUE, ...xpPos }));
+    }
+
+    if (Math.random() < CURRENCY_DROP_CHANCE) {
+      const currencyPos = jitter();
+      const amount = pickCurrencyAmount();
+      pickupsRef.current.push(new Pickup({ type: 'currency', value: amount, ...currencyPos }));
+    }
+  }, [pickCurrencyAmount, pickXpCount]);
+
+  const clearPickups = useCallback(() => {
+    pickupsRef.current = [];
+  }, []);
+
+  const clearHyperCountdown = useCallback(() => {
+    if (hyperCountdownIntervalRef.current) {
+      clearInterval(hyperCountdownIntervalRef.current);
+      hyperCountdownIntervalRef.current = null;
+    }
+    if (hyperCountdownTimeoutRef.current) {
+      clearTimeout(hyperCountdownTimeoutRef.current);
+      hyperCountdownTimeoutRef.current = null;
+    }
+    hyperCountdownRef.current = 0;
+    setUiState(prev => ({ ...prev, hyperCountdownMs: 0 }));
+  }, [setUiState]);
+
+  const updatePickups = useCallback((ship) => {
+    if (!ship) return;
+    const remaining = [];
+    pickupsRef.current.forEach((pickup) => {
+      const state = pickup.update(ship);
+      if (state === 'collected') {
+        if (pickup.type === 'xp') {
+          addXp(pickup.value);
+        } else if (pickup.type === 'currency') {
+          addCurrency(pickup.value);
+        }
+      } else if (state !== 'expired') {
+        remaining.push(pickup);
+      }
+    });
+    pickupsRef.current = remaining;
+  }, [addXp, addCurrency]);
 
   const startNewStage = useCallback((stageNumber, asteroidCount) => {
     stageRef.current = stageNumber;
@@ -109,7 +214,42 @@ export function useGameWorld({
 
     // Update UI stage indicator
     setUiState(prev => ({ ...prev, stage: stageNumber }));
-  }, [initializeAsteroids, generateStarfield, bulletsRef, setBulletCount, shipRef, setUiState]);
+    clearPickups();
+    clearHyperCountdown();
+  }, [initializeAsteroids, generateStarfield, bulletsRef, setBulletCount, shipRef, setUiState, clearPickups, clearHyperCountdown]);
+
+  const startHyperCountdown = useCallback(() => {
+    clearHyperCountdown();
+    hyperCountdownRef.current = HYPER_JUMP_COUNTDOWN_MS;
+    setUiState(prev => ({ ...prev, hyperCountdownMs: hyperCountdownRef.current }));
+
+    hyperCountdownIntervalRef.current = setInterval(() => {
+      hyperCountdownRef.current = Math.max(0, hyperCountdownRef.current - 50);
+      setUiState(prev => ({ ...prev, hyperCountdownMs: hyperCountdownRef.current }));
+    }, 50);
+
+    hyperCountdownTimeoutRef.current = setTimeout(() => {
+      if (hyperCountdownIntervalRef.current) {
+        clearInterval(hyperCountdownIntervalRef.current);
+        hyperCountdownIntervalRef.current = null;
+      }
+      hyperCountdownTimeoutRef.current = null;
+      hyperCountdownRef.current = 0;
+      setUiState(prev => ({ ...prev, hyperCountdownMs: 0 }));
+
+      if (shipRef.current && hyperSpaceJumpEffectRef.current) {
+        hyperSpaceJumpEffectRef.current.trigger(
+          shipRef.current.angle,
+          stageRef.current,
+          baseAsteroidCountRef.current + Math.floor(stageRef.current * 0.5),
+          (stageNumber, asteroidCount) => {
+            setTimeout(() => startNewStage(stageNumber, asteroidCount), 100);
+          }
+        );
+        hyperSpaceJumpEffectRef.current.initStarVelocities(starsRef.current);
+      }
+    }, HYPER_JUMP_COUNTDOWN_MS);
+  }, [clearHyperCountdown, setUiState, shipRef, hyperSpaceJumpEffectRef, stageRef, baseAsteroidCountRef, starsRef, startNewStage]);
 
   const updateAsteroidCounts = useCallback(() => {
     const counts = { large: 0, medium: 0, small: 0 };
@@ -122,29 +262,18 @@ export function useGameWorld({
 
     asteroidCountsRef.current = counts;
 
-    // Check if stage is cleared (no asteroids left)
+    if (modeRef?.current === 'survival') {
+      stageClearedRef.current = false;
+      return;
+    }
+
     const totalAsteroids = counts.large + counts.medium + counts.small;
     if (totalAsteroids === 0 && !stageClearedRef.current) {
       stageClearedRef.current = true;
-      // Trigger stage clear effect
       stageClearEffectRef.current.trigger();
-
-      // After a delay, start hyperspace jump to next stage
-      setTimeout(() => {
-        if (shipRef.current && hyperSpaceJumpEffectRef.current) {
-          hyperSpaceJumpEffectRef.current.trigger(
-            shipRef.current.angle,
-            stageRef.current,
-            baseAsteroidCountRef.current + Math.floor(stageRef.current * 0.5),
-            (stageNumber, asteroidCount) => {
-              setTimeout(() => startNewStage(stageNumber, asteroidCount), 100);
-            }
-          );
-          hyperSpaceJumpEffectRef.current.initStarVelocities(starsRef.current);
-        }
-      }, 2000);
+      startHyperCountdown();
     }
-  }, [shipRef, stageClearEffectRef, hyperSpaceJumpEffectRef, starsRef, startNewStage]);
+  }, [asteroidsRef, asteroidCountsRef, stageClearEffectRef, stageClearedRef, startHyperCountdown, modeRef]);
 
   return {
     // refs
@@ -162,7 +291,15 @@ export function useGameWorld({
     xpNeededForNextLevel,
     triggerLevelUp,
     addXp,
+    addCurrency,
     updateAsteroidCounts,
     startNewStage,
+    currencyRef,
+    pickupsRef,
+    spawnPickups,
+    updatePickups,
+    clearPickups,
+    hyperCountdownRef,
+    clearHyperCountdown,
   };
 }

@@ -1,9 +1,10 @@
-import { LEVELUP_PARTICLES, LEVELUP_PARTICLE_SPEED, LEVELUP_PARTICLE_LIFE, LEVELUP_FLASH_DECAY, LEVELUP_TEXT_TIME } from '../utils/constants.js';
+import { LEVELUP_PARTICLES, LEVELUP_PARTICLE_SPEED, LEVELUP_PARTICLE_LIFE, LEVELUP_FLASH_DECAY, LEVELUP_FLASH_HOLD, LEVELUP_TEXT_TIME } from '../utils/constants.js';
 
 export class LevelUpEffect {
   constructor() {
     this.active = false;
     this.flash = 0;
+    this.flashHold = 0;
     this.textTimer = 0;
     this.particles = [];
     this.origin = { x: 0, y: 0 };
@@ -22,7 +23,8 @@ export class LevelUpEffect {
       parts.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: LEVELUP_PARTICLE_LIFE, color, size });
     }
     this.active = true;
-    this.flash = 0.8; // lower max flash opacity ~80%
+    this.flash = 0.7;
+    this.flashHold = LEVELUP_FLASH_HOLD;
     this.textTimer = LEVELUP_TEXT_TIME;
     this.particles = parts;
     this.origin = { x, y };
@@ -41,7 +43,11 @@ export class LevelUpEffect {
       part.life -= 1;
       if (part.life <= 0) p.splice(i, 1);
     }
-    this.flash = Math.max(0, this.flash - LEVELUP_FLASH_DECAY);
+    if (this.flashHold > 0) {
+      this.flashHold -= 1;
+    } else {
+      this.flash = Math.max(0, this.flash - LEVELUP_FLASH_DECAY);
+    }
     if (this.textTimer > 0) this.textTimer -= 1;
     if (p.length === 0 && this.flash <= 0 && this.textTimer <= 0) {
       this.active = false;

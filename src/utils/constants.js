@@ -24,21 +24,43 @@ export const INITIAL_ASTEROID_COUNT = 5;
 export const MAX_BULLETS = 5;
 export const CROSSHAIR_SIZE = 10;
 export const MOUSE_OFFSET = 50;
-export const SCORE_PER_ASTEROID = 10;
 export const INITIAL_LIVES = 3;
 export const BULLET_SIZE = 2;
 
-// Progression / XP
-export const XP_PER_ASTEROID = 18;          // XP granted per asteroid break
+// Loot & progression
+export const XP_PICKUP_VALUE = 5;           // XP granted per pickup orb
+export const CURRENCY_DROP_CHANCE = 0.4;    // Chance an asteroid drops currency
+export const XP_DROP_WEIGHTS = [            // Bell-curve weights for XP orb count
+  { amount: 1, weight: 0.1 },
+  { amount: 2, weight: 0.25 },
+  { amount: 3, weight: 0.3 },
+  { amount: 4, weight: 0.25 },
+  { amount: 5, weight: 0.1 },
+];
+export const CURRENCY_DROP_WEIGHTS = [      // Bell-curve weights for 1-5 currency
+  { amount: 1, weight: 0.1 },
+  { amount: 2, weight: 0.25 },
+  { amount: 3, weight: 0.3 },
+  { amount: 4, weight: 0.25 },
+  { amount: 5, weight: 0.1 },
+];
+export const PICKUP_POP_SPEED = 1.4;        // Initial burst speed when spawned
+export const PICKUP_DRAG = 0.92;            // Damping per frame while floating
+export const PICKUP_ATTRACT_RADIUS = 220;   // Distance where pickups home to ship
+export const PICKUP_COLLECT_RADIUS = 26;    // Distance to actually collect
+export const PICKUP_MAX_SPEED = 6;          // Cap attraction velocity
+export const PICKUP_LIFETIME_FRAMES = 60 * 15; // 15 seconds before fading
 export const XP_LEVEL_BASE = 300;           // XP needed for level 1→2
 export const XP_LEVEL_GROWTH = 1.25;        // Each level requires 25% more XP than previous
+export const HYPER_JUMP_COUNTDOWN_MS = 5000; // Grace period before waves hyperspace
 
 // Level-up effects
 export const LEVELUP_PARTICLES = 225;       // +50% bigger burst
 export const LEVELUP_PARTICLE_SPEED = 12;   // +50% faster particles
 export const LEVELUP_PARTICLE_LIFE = 40;    // frames
-export const LEVELUP_FLASH_DECAY = 0.06;    // alpha per frame
-export const LEVELUP_TEXT_TIME = 75;        // frames to show text
+export const LEVELUP_FLASH_DECAY = 0.02;    // alpha per frame (after hold)
+export const LEVELUP_FLASH_HOLD = 12;       // frames to keep flash at full intensity
+export const LEVELUP_TEXT_TIME = 120;       // frames to show text (~2s)
 
 // Stage Clear effect timings (in frames)
 export const STAGE_CLEAR_SLIDE_TIME = 30;   // Time to slide in from left

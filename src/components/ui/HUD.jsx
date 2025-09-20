@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function HUD({ xp, xpMax, level, lives, wave, time, score, minimapRef }) {
+export default function HUD({ xp, xpMax, level, lives, wave, time, currency, minimapRef }) {
   const pct = Math.max(0, Math.min(1, xpMax ? xp / xpMax : 0));
 
   return (
@@ -21,8 +21,8 @@ export default function HUD({ xp, xpMax, level, lives, wave, time, score, minima
             <div className="hudValue">{lives}</div>
           </div>
           <div className="hudColumn">
-            <div className="hudLabel">Score</div>
-            <div className="hudValue">{score}</div>
+            <div className="hudLabel">Currency</div>
+            <div className="hudValue">{currency}</div>
           </div>
         </div>
 

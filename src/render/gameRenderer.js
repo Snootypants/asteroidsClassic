@@ -12,6 +12,7 @@ export function renderScene({
   shipRef,
   asteroidsRef,
   bulletsRef,
+  pickupsRef,
   mousePositionRef,
   gameStartedRef,
   levelUpEffectRef,
@@ -111,6 +112,18 @@ export function renderScene({
     }
   });
 
+  pickupsRef?.current?.forEach((pickup) => {
+    if (pickup && camera.isVisible(pickup.x, pickup.y, 24, canvasWidth, canvasHeight)) {
+      const screenPos = camera.worldToScreen(pickup.x, pickup.y, canvasWidth, canvasHeight);
+      ctx.save();
+      ctx.translate(screenPos.x, screenPos.y);
+      ctx.scale(1 / camera.zoom, 1 / camera.zoom);
+      ctx.translate(-pickup.x, -pickup.y);
+      pickup.draw(ctx);
+      ctx.restore();
+    }
+  });
+
   // Draw crosshair at mouse position
   if (gameStartedRef.current) {
     const mousePos = mousePositionRef.current;
@@ -141,7 +154,7 @@ export function renderScene({
       minimapCtx = minimapCanvas.getContext('2d');
     } catch {}
     if (minimapCtx) {
-      Minimap.draw(minimapCtx, shipRef.current, asteroidsRef.current, camera);
+      Minimap.draw(minimapCtx, shipRef.current, asteroidsRef.current, pickupsRef?.current ?? [], camera);
     }
   }
 }

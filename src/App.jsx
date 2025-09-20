@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Ship } from './components/Ship.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, CROSSHAIR_SIZE, INITIAL_LIVES, WORLD_WIDTH, WORLD_HEIGHT } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, CROSSHAIR_SIZE, INITIAL_LIVES, WORLD_WIDTH, WORLD_HEIGHT, HYPER_JUMP_COUNTDOWN_MS } from './utils/constants.js';
 import { LevelUpEffect } from './effects/LevelUpEffect.js';
 import { StageClearEffect } from './effects/StageClearEffect.js';
 import { HyperSpaceJumpEffect } from './effects/HyperSpaceJumpEffect.js';
@@ -22,6 +22,13 @@ import './App.css';
 import './styles/theme.css';
 import './styles/ui.css';
 
+const formatCountdown = (ms) => {
+  const clamped = Math.max(0, Math.floor(ms));
+  const seconds = Math.floor(clamped / 1000);
+  const hundredths = Math.floor((clamped % 1000) / 10);
+  return `${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}`;
+};
+
 function App() {
   const canvasRef = useRef(null);
   const playAreaRef = useRef(null);
@@ -39,28 +46,40 @@ function App() {
   const testingModeRef = useRef(false);
   const gameStartedRef = useRef(false);
   const gameOverRef = useRef(false);
-  const scoreRef = useRef(0);
   const livesRef = useRef(INITIAL_LIVES);
   const lastShotTimeRef = useRef(0);
   const levelUpEffectRef = useRef(new LevelUpEffect());
   const stageClearEffectRef = useRef(new StageClearEffect());
   const hyperSpaceJumpEffectRef = useRef(new HyperSpaceJumpEffect());
   const deathExplosionRef = useRef(new DeathExplosion());
+  const modeRef = useRef(null);
+  const survivalStateRef = useRef({ lastSpawnMs: 0, speedMultiplier: 1, spawnIntervalMs: 2000 });
   const [uiState, setUiState] = useState({
-    score: 0, lives: INITIAL_LIVES, xp: 0, level: 1, gameOver: false,
-    gameStarted: false, isPaused: false, testingMode: false, mode: null
+    currency: 0,
+    lives: INITIAL_LIVES,
+    xp: 0,
+    level: 1,
+    gameOver: false,
+    gameStarted: false,
+    isPaused: false,
+    testingMode: false,
+    mode: null,
+    hyperCountdownMs: 0,
   });
   const [bulletCount, setBulletCount] = useState(0);
-  const [lastRun, setLastRun] = useState({ level: 1, wave: 1, time: '00:00:00', score: 0 });
+  const [lastRun, setLastRun] = useState({ level: 1, wave: 1, time: '00:00:00', currency: 0 });
 
-  const world = useGameWorld({ shipRef, bulletsRef, setBulletCount, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef, setUiState });
+  const world = useGameWorld({ shipRef, bulletsRef, setBulletCount, levelUpEffectRef, stageClearEffectRef, hyperSpaceJumpEffectRef, modeRef, setUiState });
   const { start, pause, reset, formattedTime } = useGameTimer();
 
   const session = useGameSession({
     setUiState, shipRef, isPausedRef, bulletsRef, setBulletCount, canvasRef, cameraRef, mouseScreenRef, mousePositionRef,
-    gameStartedRef, gameOverRef, scoreRef, livesRef, lastShotTimeRef, xpRef: world.xpRef, levelRef: world.levelRef,
+    gameStartedRef, gameOverRef, currencyRef: world.currencyRef, livesRef, lastShotTimeRef, xpRef: world.xpRef, levelRef: world.levelRef,
     stageRef: world.stageRef, baseAsteroidCountRef: world.baseAsteroidCountRef,
     initializeAsteroids: world.initializeAsteroids, generateStarfield: world.generateStarfield,
+    clearPickups: world.clearPickups, clearHyperCountdown: world.clearHyperCountdown,
+    modeRef,
+    survivalStateRef,
     setLastRun, formattedTime,
   });
 
@@ -74,8 +93,11 @@ function App() {
   const { update } = useGameLogic({
     gameOverRef, gameStartedRef, isPausedRef, cameraRef, canvasWidthRef, canvasHeightRef, keysRef, shipRef,
     mouseScreenRef, mousePositionRef, asteroidsRef: world.asteroidsRef, bulletsRef, setBulletCount, isMouseDownRef,
-    lastShotTimeRef, scoreRef, livesRef, addXp: world.addXp, levelUpEffectRef, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef,
+    lastShotTimeRef, livesRef, spawnPickups: world.spawnPickups, updatePickups: world.updatePickups,
+    levelUpEffectRef, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef,
     starsRef: world.starsRef, updateAsteroidCounts: world.updateAsteroidCounts,
+    modeRef,
+    survivalStateRef,
   });
 
   const { metaLayout } = useResponsiveLayout({ canvasRef, playAreaRef, canvasWidthRef, canvasHeightRef });
@@ -86,6 +108,10 @@ function App() {
     initializeAsteroids();
     generateStarfield();
   }, [initializeAsteroids, generateStarfield]);
+
+  useEffect(() => {
+    modeRef.current = uiState.mode;
+  }, [uiState.mode]);
 
   useEffect(() => {
     const active = uiState.mode === 'survival' && uiState.gameStarted && !uiState.isPaused && !uiState.gameOver;
@@ -105,6 +131,7 @@ function App() {
       starsRef: world.starsRef,
       shipRef,
       asteroidsRef: world.asteroidsRef,
+      pickupsRef: world.pickupsRef,
       bulletsRef,
       mousePositionRef,
       gameStartedRef,
@@ -123,6 +150,7 @@ function App() {
     world.starsRef,
     shipRef,
     world.asteroidsRef,
+    world.pickupsRef,
     bulletsRef,
     mousePositionRef,
     gameStartedRef,
@@ -131,10 +159,19 @@ function App() {
     hyperSpaceJumpEffectRef,
     deathExplosionRef,
   ]);
-  useGameLoop({ update, render, setUiState, scoreRef, livesRef, gameOverRef, xpRef: world.xpRef, levelRef: world.levelRef });
+  useGameLoop({ update, render, setUiState, currencyRef: world.currencyRef, livesRef, gameOverRef, xpRef: world.xpRef, levelRef: world.levelRef, hyperCountdownRef: world.hyperCountdownRef });
+
+  const countdownActive = uiState.mode === 'waves' && uiState.hyperCountdownMs > 0;
+  const countdownRatio = countdownActive ? Math.max(0, Math.min(1, uiState.hyperCountdownMs / HYPER_JUMP_COUNTDOWN_MS)) : 0;
+  const countdownColor = countdownActive
+    ? `hsl(${Math.round(120 * countdownRatio)}, 85%, ${45 + (1 - countdownRatio) * 20}%)`
+    : undefined;
+  const outerSpaceStyle = countdownActive
+    ? { filter: `brightness(${1 + (1 - countdownRatio) * 0.35})` }
+    : undefined;
 
   return (
-    <div className="outerSpace">
+    <div className="outerSpace" style={outerSpaceStyle}>
       <div
         ref={playAreaRef}
         className="playfieldFrame"
@@ -163,9 +200,16 @@ function App() {
         lives={uiState.lives}
         wave={uiState.mode === 'waves' ? world.stageRef.current : 1}
         time={formattedTime}
-        score={uiState.score}
+        currency={uiState.currency}
         minimapRef={minimapCanvasRef}
       />
+
+      {countdownActive && (
+        <div className="hyperCountdownBanner" style={{ color: countdownColor }}>
+          <span className="label">Hyper jump in</span>
+          <span className="timer mono">{formatCountdown(uiState.hyperCountdownMs)}</span>
+        </div>
+      )}
 
       {!uiState.gameStarted && (
         <StartScreen
@@ -179,7 +223,7 @@ function App() {
           level={lastRun.level}
           wave={lastRun.wave}
           time={lastRun.time}
-          score={lastRun.score}
+          currency={lastRun.currency}
           onMainMenu={session.handleExitToMenu}
           onPlayAgain={() => session.startGame()}
         />

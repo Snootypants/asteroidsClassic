@@ -16,7 +16,7 @@ export function useGameSession({
   mousePositionRef,
   gameStartedRef,
   gameOverRef,
-  scoreRef,
+  currencyRef,
   livesRef,
   lastShotTimeRef,
   xpRef,
@@ -25,14 +25,18 @@ export function useGameSession({
   baseAsteroidCountRef,
   initializeAsteroids,
   generateStarfield,
+  clearPickups,
+  clearHyperCountdown,
+  modeRef,
+  survivalStateRef,
   setLastRun,
   formattedTime,
 }) {
   const startGame = useCallback(() => {
     gameStartedRef.current = true;
     isPausedRef.current = false;
-    setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false, xp: 0, level: 1 }));
-    scoreRef.current = 0;
+    setUiState(prev => ({ ...prev, gameStarted: true, gameOver: false, xp: 0, level: 1, currency: 0 }));
+    currencyRef.current = 0;
     livesRef.current = INITIAL_LIVES;
     xpRef.current = 0;
     levelRef.current = 1;
@@ -43,6 +47,7 @@ export function useGameSession({
     setBulletCount(0);
     stageRef.current = 1;
     baseAsteroidCountRef.current = INITIAL_ASTEROID_COUNT;
+    survivalStateRef.current = { lastSpawnMs: 0, speedMultiplier: 1, spawnIntervalMs: 2000 };
 
     // Reset camera
     const camera = cameraRef.current;
@@ -60,15 +65,17 @@ export function useGameSession({
     mousePositionRef.current = { x: worldPos.x, y: worldPos.y };
 
     // Re-initialize asteroids
+    clearPickups();
     initializeAsteroids();
 
     // Regenerate starfield for new game
     generateStarfield();
+    clearHyperCountdown();
   }, [
     setUiState, shipRef, bulletsRef, setBulletCount, cameraRef, canvasRef,
     mouseScreenRef, mousePositionRef, gameStartedRef, isPausedRef, gameOverRef,
-    scoreRef, livesRef, lastShotTimeRef, xpRef, levelRef, stageRef, baseAsteroidCountRef,
-    initializeAsteroids, generateStarfield
+    currencyRef, livesRef, lastShotTimeRef, xpRef, levelRef, stageRef, baseAsteroidCountRef,
+    initializeAsteroids, generateStarfield, clearPickups, clearHyperCountdown, survivalStateRef
   ]);
 
   const shootBullet = useCallback((bypassLimit = false) => {
@@ -83,8 +90,11 @@ export function useGameSession({
 
   const handleSelectMode = useCallback((mode) => {
     setUiState(prev => ({ ...prev, mode }));
+    if (modeRef) {
+      modeRef.current = mode;
+    }
     startGame(); // For now both modes start the same gameplay
-  }, [setUiState, startGame]);
+  }, [setUiState, startGame, modeRef]);
 
   const handleResume = useCallback(() => {
     setUiState(prev => ({ ...prev, isPaused: false }));
@@ -98,7 +108,7 @@ export function useGameSession({
           level: prev.level,
           wave: stageRef.current,
           time: formattedTime,
-          score: prev.score
+          currency: prev.currency
         });
       }
       return { ...prev, isPaused: false, gameStarted: false };
@@ -109,7 +119,12 @@ export function useGameSession({
     gameOverRef.current = false;
     bulletsRef.current = [];
     setBulletCount(0);
-  }, [gameStartedRef, gameOverRef, bulletsRef, setBulletCount, setUiState, setLastRun, stageRef, formattedTime]);
+    clearPickups();
+    clearHyperCountdown();
+    if (modeRef) {
+      modeRef.current = null;
+    }
+  }, [gameStartedRef, gameOverRef, bulletsRef, setBulletCount, setUiState, setLastRun, stageRef, formattedTime, clearPickups, clearHyperCountdown, modeRef]);
 
   return {
     startGame,
