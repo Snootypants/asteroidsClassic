@@ -120,3 +120,9 @@ export const DEATH_PAUSE_MS = 1000;          // 1 second
 
 // HUD positioning
 export const HUD_GUTTER_PX = 24;
+export const PLAYFIELD_FRAME_BORDER_OFFSET = 4; // accounts for 2px border on each side
+export const COUNTDOWN_COLOR_RANGE_DEGREES = 120;
+export const COUNTDOWN_SATURATION_PERCENT = 85;
+export const COUNTDOWN_LIGHTNESS_BASE_PERCENT = 45;
+export const COUNTDOWN_LIGHTNESS_DELTA = 20;
+export const COUNTDOWN_BRIGHTNESS_BOOST = 0.35;

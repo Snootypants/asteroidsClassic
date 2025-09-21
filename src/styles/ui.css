@@ -115,3 +115,195 @@
 }
 .btn:active { transform: translateY(1px); }
 .help { margin-top: 10px; color: var(--fg-dim); }
+
+/* Test console */
+.testConsole {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(420px, 33vw);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px 24px 40px;
+  background: rgba(7, 12, 22, 0.92);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.45);
+  transform: translateX(101%);
+  transition: transform 0.35s ease;
+  pointer-events: none;
+  z-index: 90;
+}
+
+.testConsole.open {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.testConsole__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.testConsole__title {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.testConsole__helper {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.testConsole__tabs {
+  display: grid;
+  gap: 8px;
+}
+
+.testConsole__tab {
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: default;
+}
+
+.testConsole__tab.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(156, 240, 109, 0.12);
+}
+
+.testConsole__tab[disabled] {
+  opacity: 0.4;
+}
+
+.testConsole__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.testConsole__sectionHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+
+.testConsole__sectionHeader p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.testConsole__effects {
+  display: grid;
+  gap: 12px;
+}
+
+.testConsole__effectButton {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.testConsole__effectButton strong {
+  display: block;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+}
+
+.testConsole__effectButton small {
+  display: block;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.testConsole__effectButton:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+.testConsole__chip {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(156, 240, 109, 0.18);
+  border: 1px solid rgba(156, 240, 109, 0.35);
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.testConsole__checkboxList {
+  display: grid;
+  gap: 10px;
+}
+
+.testConsole__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.testConsole__checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+/* Debug stat overlay */
+.debugStats {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  display: grid;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  z-index: 95;
+}
+
+.debugStats__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+
+.debugStats__label {
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+}
+
+.debugStats__value {
+  color: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}

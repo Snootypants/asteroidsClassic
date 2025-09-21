@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Ship } from './components/Ship.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, CROSSHAIR_SIZE, INITIAL_LIVES, WORLD_WIDTH, WORLD_HEIGHT, HYPER_JUMP_COUNTDOWN_MS } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, CROSSHAIR_SIZE, INITIAL_LIVES, WORLD_WIDTH, WORLD_HEIGHT, HYPER_JUMP_COUNTDOWN_MS, PLAYFIELD_FRAME_BORDER_OFFSET, COUNTDOWN_COLOR_RANGE_DEGREES, COUNTDOWN_SATURATION_PERCENT, COUNTDOWN_LIGHTNESS_BASE_PERCENT, COUNTDOWN_LIGHTNESS_DELTA, COUNTDOWN_BRIGHTNESS_BOOST } from './utils/constants.js';
 import { LevelUpEffect } from './effects/LevelUpEffect.js';
 import { StageClearEffect } from './effects/StageClearEffect.js';
 import { HyperSpaceJumpEffect } from './effects/HyperSpaceJumpEffect.js';
@@ -14,20 +14,17 @@ import { useResponsiveLayout } from './hooks/useResponsiveLayout.js';
 import { useGameLoop } from './hooks/useGameLoop.js';
 import { useGameTimer } from './hooks/useGameTimer.js';
 import { renderScene } from './render/gameRenderer.js';
+import { formatCountdown } from './utils/time.js';
 import PauseOverlay from './components/PauseOverlay.jsx';
 import HUD from './components/ui/HUD';
 import StartScreen from './components/ui/StartScreen';
 import GameOverOverlay from './components/ui/GameOverOverlay';
+import TestConsole from './components/ui/TestConsole.jsx';
+import DebugStatsDisplay from './components/ui/DebugStatsDisplay.jsx';
+import { useTestConsole } from './hooks/useTestConsole.js';
 import './App.css';
 import './styles/theme.css';
 import './styles/ui.css';
-
-const formatCountdown = (ms) => {
-  const clamped = Math.max(0, Math.floor(ms));
-  const seconds = Math.floor(clamped / 1000);
-  const hundredths = Math.floor((clamped % 1000) / 10);
-  return `${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}`;
-};
 
 function App() {
   const canvasRef = useRef(null);
@@ -68,41 +65,128 @@ function App() {
   });
   const [bulletCount, setBulletCount] = useState(0);
   const [lastRun, setLastRun] = useState({ level: 1, wave: 1, time: '00:00:00', currency: 0 });
-
-  const world = useGameWorld({ shipRef, bulletsRef, setBulletCount, levelUpEffectRef, stageClearEffectRef, hyperSpaceJumpEffectRef, modeRef, setUiState });
+  const {
+    initializeAsteroids,
+    generateStarfield,
+    currencyRef,
+    xpRef,
+    levelRef,
+    stageRef,
+    baseAsteroidCountRef,
+    clearPickups,
+    clearHyperCountdown,
+    startNewStage,
+    xpNeededForNextLevel,
+    asteroidCountsRef,
+    hyperCountdownRef,
+    asteroidsRef,
+    pickupsRef,
+    starsRef,
+    spawnPickups,
+    updatePickups,
+    updateAsteroidCounts,
+    triggerLevelUp,
+  } = useGameWorld({ shipRef, bulletsRef, setBulletCount, levelUpEffectRef, stageClearEffectRef, hyperSpaceJumpEffectRef, modeRef, setUiState });
   const { start, pause, reset, formattedTime } = useGameTimer();
 
   const session = useGameSession({
-    setUiState, shipRef, isPausedRef, bulletsRef, setBulletCount, canvasRef, cameraRef, mouseScreenRef, mousePositionRef,
-    gameStartedRef, gameOverRef, currencyRef: world.currencyRef, livesRef, lastShotTimeRef, xpRef: world.xpRef, levelRef: world.levelRef,
-    stageRef: world.stageRef, baseAsteroidCountRef: world.baseAsteroidCountRef,
-    initializeAsteroids: world.initializeAsteroids, generateStarfield: world.generateStarfield,
-    clearPickups: world.clearPickups, clearHyperCountdown: world.clearHyperCountdown,
+    setUiState,
+    shipRef,
+    isPausedRef,
+    bulletsRef,
+    setBulletCount,
+    canvasRef,
+    cameraRef,
+    mouseScreenRef,
+    mousePositionRef,
+    gameStartedRef,
+    gameOverRef,
+    currencyRef,
+    livesRef,
+    lastShotTimeRef,
+    xpRef,
+    levelRef,
+    stageRef,
+    baseAsteroidCountRef,
+    initializeAsteroids,
+    generateStarfield,
+    clearPickups,
+    clearHyperCountdown,
     modeRef,
     survivalStateRef,
-    setLastRun, formattedTime,
+    setLastRun,
+    formattedTime,
+  });
+
+  const {
+    statOptions,
+    statSelections,
+    toggleStat: handleToggleDebugStat,
+    effectActions,
+    frameRate: debugFrameRate,
+    onFrame: handleFrameSample,
+  } = useTestConsole({
+    shipRef,
+    deathExplosionRef,
+    hyperSpaceJumpEffectRef,
+    stageClearEffectRef,
+    triggerLevelUp,
+    levelRef,
+    stageRef,
+    baseAsteroidCountRef,
+    starsRef,
+    startNewStage,
   });
 
   useGameControls({
-    canvasRef, keysRef, mousePositionRef, mouseScreenRef, isMouseDownRef, isPausedRef, testingModeRef,
-    shootBullet: session.shootBullet, triggerLevelUp: world.triggerLevelUp, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef,
-    shipRef, stageRef: world.stageRef, baseAsteroidCountRef: world.baseAsteroidCountRef, starsRef: world.starsRef,
-    startNewStage: world.startNewStage, startGame: session.startGame, setUiState, cameraRef, gameStartedRef, gameOverRef, levelRef: world.levelRef,
+    canvasRef,
+    keysRef,
+    mousePositionRef,
+    mouseScreenRef,
+    isMouseDownRef,
+    isPausedRef,
+    testingModeRef,
+    shootBullet: session.shootBullet,
+    hyperSpaceJumpEffectRef,
+    deathExplosionRef,
+    startGame: session.startGame,
+    setUiState,
+    cameraRef,
+    gameStartedRef,
+    gameOverRef,
+    testingEffectActions: effectActions,
   });
 
   const { update } = useGameLogic({
-    gameOverRef, gameStartedRef, isPausedRef, cameraRef, canvasWidthRef, canvasHeightRef, keysRef, shipRef,
-    mouseScreenRef, mousePositionRef, asteroidsRef: world.asteroidsRef, bulletsRef, setBulletCount, isMouseDownRef,
-    lastShotTimeRef, livesRef, spawnPickups: world.spawnPickups, updatePickups: world.updatePickups,
-    levelUpEffectRef, stageClearEffectRef, hyperSpaceJumpEffectRef, deathExplosionRef,
-    starsRef: world.starsRef, updateAsteroidCounts: world.updateAsteroidCounts,
+    gameOverRef,
+    gameStartedRef,
+    isPausedRef,
+    cameraRef,
+    canvasWidthRef,
+    canvasHeightRef,
+    keysRef,
+    shipRef,
+    mouseScreenRef,
+    mousePositionRef,
+    asteroidsRef,
+    bulletsRef,
+    setBulletCount,
+    isMouseDownRef,
+    lastShotTimeRef,
+    livesRef,
+    spawnPickups,
+    updatePickups,
+    levelUpEffectRef,
+    stageClearEffectRef,
+    hyperSpaceJumpEffectRef,
+    deathExplosionRef,
+    starsRef,
+    updateAsteroidCounts,
     modeRef,
     survivalStateRef,
   });
 
   const { metaLayout } = useResponsiveLayout({ canvasRef, playAreaRef, canvasWidthRef, canvasHeightRef });
-
-  const { initializeAsteroids, generateStarfield } = world;
 
   useEffect(() => {
     initializeAsteroids();
@@ -128,10 +212,10 @@ function App() {
       canvasHeightRef,
       minimapCanvasRef,
       cameraRef,
-      starsRef: world.starsRef,
+      starsRef,
       shipRef,
-      asteroidsRef: world.asteroidsRef,
-      pickupsRef: world.pickupsRef,
+      asteroidsRef,
+      pickupsRef,
       bulletsRef,
       mousePositionRef,
       gameStartedRef,
@@ -147,10 +231,10 @@ function App() {
     canvasHeightRef,
     minimapCanvasRef,
     cameraRef,
-    world.starsRef,
+    starsRef,
     shipRef,
-    world.asteroidsRef,
-    world.pickupsRef,
+    asteroidsRef,
+    pickupsRef,
     bulletsRef,
     mousePositionRef,
     gameStartedRef,
@@ -159,16 +243,32 @@ function App() {
     hyperSpaceJumpEffectRef,
     deathExplosionRef,
   ]);
-  useGameLoop({ update, render, setUiState, currencyRef: world.currencyRef, livesRef, gameOverRef, xpRef: world.xpRef, levelRef: world.levelRef, hyperCountdownRef: world.hyperCountdownRef });
+  useGameLoop({
+    update,
+    render,
+    setUiState,
+    currencyRef,
+    livesRef,
+    gameOverRef,
+    xpRef,
+    levelRef,
+    hyperCountdownRef,
+    onFrame: handleFrameSample,
+  });
 
   const countdownActive = uiState.mode === 'waves' && uiState.hyperCountdownMs > 0;
   const countdownRatio = countdownActive ? Math.max(0, Math.min(1, uiState.hyperCountdownMs / HYPER_JUMP_COUNTDOWN_MS)) : 0;
-  const countdownColor = countdownActive
-    ? `hsl(${Math.round(120 * countdownRatio)}, 85%, ${45 + (1 - countdownRatio) * 20}%)`
-    : undefined;
-  const outerSpaceStyle = countdownActive
-    ? { filter: `brightness(${1 + (1 - countdownRatio) * 0.35})` }
-    : undefined;
+  let countdownColor;
+  let outerSpaceStyle;
+
+  if (countdownActive) {
+    const countdownHue = Math.round(COUNTDOWN_COLOR_RANGE_DEGREES * countdownRatio);
+    const countdownLightness = COUNTDOWN_LIGHTNESS_BASE_PERCENT + (1 - countdownRatio) * COUNTDOWN_LIGHTNESS_DELTA;
+    countdownColor = `hsl(${countdownHue}, ${COUNTDOWN_SATURATION_PERCENT}%, ${countdownLightness}%)`;
+    const brightness = 1 + (1 - countdownRatio) * COUNTDOWN_BRIGHTNESS_BOOST;
+    outerSpaceStyle = { filter: `brightness(${brightness})` };
+  }
+  const xpNeededForCurrentLevel = xpNeededForNextLevel(uiState.level);
 
   return (
     <div className="outerSpace" style={outerSpaceStyle}>
@@ -176,8 +276,8 @@ function App() {
         ref={playAreaRef}
         className="playfieldFrame"
         style={{
-          width: canvasWidthRef.current + 4,
-          height: canvasHeightRef.current + 4,
+          width: canvasWidthRef.current + PLAYFIELD_FRAME_BORDER_OFFSET,
+          height: canvasHeightRef.current + PLAYFIELD_FRAME_BORDER_OFFSET,
           left: `${metaLayout.playX}px`,
           top: `${metaLayout.playY}px`,
           position: 'absolute'
@@ -195,10 +295,10 @@ function App() {
 
       <HUD
         xp={uiState.xp}
-        xpMax={world.xpNeededForNextLevel(uiState.level)}
+        xpMax={xpNeededForCurrentLevel}
         level={uiState.level}
         lives={uiState.lives}
-        wave={uiState.mode === 'waves' ? world.stageRef.current : 1}
+        wave={uiState.mode === 'waves' ? stageRef.current : 1}
         time={formattedTime}
         currency={uiState.currency}
         minimapRef={minimapCanvasRef}
@@ -234,17 +334,32 @@ function App() {
         <PauseOverlay
           xp={uiState.xp}
           lives={uiState.lives}
-          largeCount={world.asteroidCountsRef.current.large}
-          mediumCount={world.asteroidCountsRef.current.medium}
-          smallCount={world.asteroidCountsRef.current.small}
+          largeCount={asteroidCountsRef.current.large}
+          mediumCount={asteroidCountsRef.current.medium}
+          smallCount={asteroidCountsRef.current.small}
           onResume={session.handleResume}
           onExit={session.handleExitToMenu}
         />
       )}
 
-      {uiState.testingMode && (
-        <div className="testing-mode-indicator">Testing Mode ON</div>
-      )}
+      <TestConsole
+        open={uiState.testingMode}
+        effectActions={effectActions}
+        statOptions={statOptions}
+        statSelections={statSelections}
+        onToggleStat={handleToggleDebugStat}
+      />
+
+      <DebugStatsDisplay
+        visible={uiState.testingMode}
+        selections={statSelections}
+        frameRate={debugFrameRate}
+        asteroidCounts={asteroidCountsRef.current}
+        uiState={uiState}
+        bulletCount={bulletCount}
+        xpRequired={xpNeededForCurrentLevel}
+        stageNumber={stageRef.current}
+      />
 
       <div data-testid="bullet-count" style={{ display: 'none' }}>{bulletCount}</div>
     </div>

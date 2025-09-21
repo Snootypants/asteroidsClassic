@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ZOOM_SPEED } from '../utils/constants.js';
 
 export function useGameControls({
@@ -10,25 +10,29 @@ export function useGameControls({
   isPausedRef,
   testingModeRef,
   shootBullet,
-  triggerLevelUp,
   hyperSpaceJumpEffectRef,
   deathExplosionRef,
-  shipRef,
-  stageRef,
-  baseAsteroidCountRef,
-  starsRef,
-  startNewStage,
   startGame,
   setUiState,
   cameraRef,
   gameStartedRef,
   gameOverRef,
-  levelRef,
+  testingEffectActions,
 }) {
+  const effectHotkeyMap = useMemo(() => {
+    if (!Array.isArray(testingEffectActions)) return {};
+    return testingEffectActions.reduce((acc, action) => {
+      if (action?.hotkey && typeof action.handler === 'function') {
+        acc[`Digit${action.hotkey}`] = action.handler;
+      }
+      return acc;
+    }, {});
+  }, [testingEffectActions]);
+
   // Handle pointer lock and mouse/keyboard input
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (['KeyW', 'KeyS', 'Space', 'Escape', 'Tab', 'Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
+      if (['KeyW', 'KeyS', 'Space', 'Escape', 'Tab', 'Digit1', 'Digit2', 'Digit3', 'Digit4'].includes(e.code)) {
         e.preventDefault();
       }
 
@@ -40,43 +44,23 @@ export function useGameControls({
         setUiState(prev => ({ ...prev, isPaused: isPausedRef.current }));
       }
 
-      // Toggle testing mode with Tab
+      // Toggle testing mode with Shift + Tab
       if (e.code === 'Tab') {
+        if (!e.shiftKey) {
+          return;
+        }
+        if (e.repeat) {
+          return;
+        }
         testingModeRef.current = !testingModeRef.current;
         setUiState(prev => ({ ...prev, testingMode: testingModeRef.current }));
-      }
+        }
 
       // Testing mode effect triggers
       if (testingModeRef.current && gameStartedRef.current) {
-        if (e.code === 'Digit1') {
-          // Trigger death explosion at ship position
-          if (shipRef.current && deathExplosionRef.current) {
-            deathExplosionRef.current.trigger(
-              shipRef.current.x,
-              shipRef.current.y,
-              () => {
-                // Respawn callback
-                shipRef.current.resetKinematics(6000 / 2, 5500 / 2); // Use world center
-                shipRef.current.setInvulnerableFrom(performance.now());
-              },
-              shipRef
-            );
-          }
-        }
-        if (e.code === 'Digit2') {
-          triggerLevelUp(levelRef.current);
-        }
-        if (e.code === 'Digit3') {
-          const ship = shipRef.current;
-          if (ship) {
-            hyperSpaceJumpEffectRef.current.trigger(
-              ship.angle,
-              stageRef.current,
-              baseAsteroidCountRef.current,
-              startNewStage
-            );
-            hyperSpaceJumpEffectRef.current.initStarVelocities(starsRef.current);
-          }
+        const handler = effectHotkeyMap[e.code];
+        if (handler) {
+          handler();
         }
       }
     };
@@ -133,10 +117,10 @@ export function useGameControls({
         startGame();
         return;
       }
-      if (hyperSpaceJumpEffectRef.current.phase === 'waiting') {
+      if (hyperSpaceJumpEffectRef.current?.phase === 'waiting') {
         hyperSpaceJumpEffectRef.current.startNewStage();
       }
-      if (deathExplosionRef.current.isWaiting()) {
+      if (deathExplosionRef.current?.isWaiting()) {
         deathExplosionRef.current.startRespawn();
       }
     };
@@ -173,19 +157,13 @@ export function useGameControls({
     isPausedRef,
     testingModeRef,
     shootBullet,
-    triggerLevelUp,
     hyperSpaceJumpEffectRef,
     deathExplosionRef,
-    shipRef,
-    stageRef,
-    baseAsteroidCountRef,
-    starsRef,
-    startNewStage,
     startGame,
     setUiState,
     cameraRef,
     gameStartedRef,
     gameOverRef,
-    levelRef,
+    effectHotkeyMap,
   ]);
 }

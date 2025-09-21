@@ -10,11 +10,19 @@ export function useGameLoop({
   xpRef,
   levelRef,
   hyperCountdownRef,
+  onFrame,
 }) {
   const requestRef = useRef();
+  const lastTimestampRef = useRef(null);
 
   useEffect(() => {
-    const loop = () => {
+    const loop = (timestamp) => {
+      if (lastTimestampRef.current == null) {
+        lastTimestampRef.current = timestamp;
+      }
+      const delta = timestamp - lastTimestampRef.current;
+      lastTimestampRef.current = timestamp;
+
       update();
       render();
 
@@ -29,6 +37,10 @@ export function useGameLoop({
         hyperCountdownMs: hyperCountdownRef?.current ?? 0,
       }));
 
+      if (typeof onFrame === 'function') {
+        onFrame(delta);
+      }
+
       requestRef.current = requestAnimationFrame(loop);
     };
 
@@ -37,6 +49,7 @@ export function useGameLoop({
       if (requestRef.current) {
         cancelAnimationFrame(requestRef.current);
       }
+      lastTimestampRef.current = null;
     };
-  }, [update, render, setUiState, currencyRef, livesRef, gameOverRef, xpRef, levelRef, hyperCountdownRef]);
+  }, [update, render, setUiState, currencyRef, livesRef, gameOverRef, xpRef, levelRef, hyperCountdownRef, onFrame]);
 }
