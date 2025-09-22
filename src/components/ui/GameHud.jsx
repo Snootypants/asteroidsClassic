@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function HUD({ xp, xpMax, level, lives, wave, time, currency, minimapRef, mode }) {
+export default function GameHud({ xp, xpMax, level, lives, wave, time, currency, minimapRef, mode }) {
   const pct = Math.max(0, Math.min(1, xpMax ? xp / xpMax : 0));
   const showWave = mode === 'waves';
   const showTime = mode === 'survival';

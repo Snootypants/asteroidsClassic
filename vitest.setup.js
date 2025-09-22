@@ -80,10 +80,10 @@ HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(function() {
 });
 
 // Mock requestAnimationFrame and cancelAnimationFrame
-global.requestAnimationFrame = vi.fn((callback) => {
+globalThis.requestAnimationFrame = vi.fn((callback) => {
   return setTimeout(callback, 16); // ~60fps
 });
 
-global.cancelAnimationFrame = vi.fn((id) => {
+globalThis.cancelAnimationFrame = vi.fn((id) => {
   clearTimeout(id);
 });

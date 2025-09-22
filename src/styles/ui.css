@@ -101,6 +101,80 @@
   gap: 8px 16px;
   margin: 8px 0 16px;
 }
+.pauseOverlay { cursor: pointer; }
+.pauseOverlay__panel {
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pauseOverlay__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+.pauseOverlay__statsItem {
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.pauseOverlay__statsLabel {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+}
+.pauseOverlay__statsValue {
+  display: block;
+  font-size: 22px;
+  font-weight: 600;
+}
+.pauseOverlay__asteroids {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 12px;
+}
+.pauseOverlay__asteroidsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 14px;
+}
+.pauseOverlay__asteroidsCount {
+  font-size: 20px;
+  font-weight: 700;
+}
+.pauseOverlay__asteroidList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.pauseOverlay__asteroidItem {
+  text-align: center;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.pauseOverlay__asteroidLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--fg-dim);
+}
+.pauseOverlay__asteroidValue {
+  font-size: 18px;
+  font-weight: 600;
+}
+.pauseOverlay__actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 4px;
+}
 .btn {
   padding: 10px 14px;
   border: 2px solid var(--line);

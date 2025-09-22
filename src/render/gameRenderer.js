@@ -24,10 +24,8 @@ export function renderScene({
   const canvas = canvasRef.current;
   if (!canvas) return;
 
-  let ctx;
-  try {
-    ctx = canvas.getContext('2d');
-  } catch {}
+  if (typeof canvas.getContext !== 'function') return;
+  const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const canvasWidth = canvasWidthRef.current || 1200;
   const canvasHeight = canvasHeightRef.current || 900;
@@ -148,11 +146,8 @@ export function renderScene({
 
   // Render minimap
   const minimapCanvas = minimapCanvasRef?.current;
-  if (minimapCanvas) {
-    let minimapCtx;
-    try {
-      minimapCtx = minimapCanvas.getContext('2d');
-    } catch {}
+  if (minimapCanvas && typeof minimapCanvas.getContext === 'function') {
+    const minimapCtx = minimapCanvas.getContext('2d');
     if (minimapCtx) {
       Minimap.draw(minimapCtx, shipRef.current, asteroidsRef.current, pickupsRef?.current ?? [], camera);
     }

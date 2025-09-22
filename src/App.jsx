@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Ship } from './components/Ship.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, CROSSHAIR_SIZE, INITIAL_LIVES, WORLD_WIDTH, WORLD_HEIGHT, HYPER_JUMP_COUNTDOWN_MS, PLAYFIELD_FRAME_BORDER_OFFSET, COUNTDOWN_COLOR_RANGE_DEGREES, COUNTDOWN_SATURATION_PERCENT, COUNTDOWN_LIGHTNESS_BASE_PERCENT, COUNTDOWN_LIGHTNESS_DELTA, COUNTDOWN_BRIGHTNESS_BOOST } from './utils/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, CROSSHAIR_SIZE, INITIAL_LIVES, WORLD_WIDTH, WORLD_HEIGHT, PLAYFIELD_FRAME_BORDER_OFFSET } from './utils/constants.js';
 import { LevelUpEffect } from './effects/LevelUpEffect.js';
 import { StageClearEffect } from './effects/StageClearEffect.js';
 import { HyperSpaceJumpEffect } from './effects/HyperSpaceJumpEffect.js';
@@ -15,13 +15,12 @@ import { useGameLoop } from './hooks/useGameLoop.js';
 import { useGameTimer } from './hooks/useGameTimer.js';
 import { renderScene } from './render/gameRenderer.js';
 import { formatCountdown } from './utils/time.js';
-import PauseOverlay from './components/PauseOverlay.jsx';
-import HUD from './components/ui/HUD';
-import StartScreen from './components/ui/StartScreen';
-import GameOverOverlay from './components/ui/GameOverOverlay';
+import GameHud from './components/ui/GameHud.jsx';
+import GameOverlayLayer from './components/ui/GameOverlayLayer.jsx';
 import TestConsole from './components/ui/TestConsole.jsx';
 import DebugStatsDisplay from './components/ui/DebugStatsDisplay.jsx';
 import { useTestConsole } from './hooks/useTestConsole.js';
+import { useHyperCountdownDisplay } from './hooks/useHyperCountdownDisplay.js';
 import './App.css';
 import './styles/theme.css';
 import './styles/ui.css';
@@ -256,18 +255,10 @@ function App() {
     onFrame: handleFrameSample,
   });
 
-  const countdownActive = uiState.mode === 'waves' && uiState.hyperCountdownMs > 0;
-  const countdownRatio = countdownActive ? Math.max(0, Math.min(1, uiState.hyperCountdownMs / HYPER_JUMP_COUNTDOWN_MS)) : 0;
-  let countdownColor;
-  let outerSpaceStyle;
-
-  if (countdownActive) {
-    const countdownHue = Math.round(COUNTDOWN_COLOR_RANGE_DEGREES * countdownRatio);
-    const countdownLightness = COUNTDOWN_LIGHTNESS_BASE_PERCENT + (1 - countdownRatio) * COUNTDOWN_LIGHTNESS_DELTA;
-    countdownColor = `hsl(${countdownHue}, ${COUNTDOWN_SATURATION_PERCENT}%, ${countdownLightness}%)`;
-    const brightness = 1 + (1 - countdownRatio) * COUNTDOWN_BRIGHTNESS_BOOST;
-    outerSpaceStyle = { filter: `brightness(${brightness})` };
-  }
+  const { countdownActive, countdownColor, outerSpaceStyle } = useHyperCountdownDisplay({
+    mode: uiState.mode,
+    hyperCountdownMs: uiState.hyperCountdownMs,
+  });
   const xpNeededForCurrentLevel = xpNeededForNextLevel(uiState.level);
 
   return (
@@ -293,7 +284,7 @@ function App() {
         />
       </div>
 
-      <HUD
+      <GameHud
         xp={uiState.xp}
         xpMax={xpNeededForCurrentLevel}
         level={uiState.level}
@@ -312,35 +303,12 @@ function App() {
         </div>
       )}
 
-      {!uiState.gameStarted && (
-        <StartScreen
-          onStartWaves={() => session.handleSelectMode('waves')}
-          onStartSurvival={() => session.handleSelectMode('survival')}
-        />
-      )}
-
-      {uiState.gameOver && (
-        <GameOverOverlay
-          level={lastRun.level}
-          wave={lastRun.wave}
-          time={lastRun.time}
-          currency={lastRun.currency}
-          onMainMenu={session.handleExitToMenu}
-          onPlayAgain={() => session.startGame()}
-        />
-      )}
-
-      {uiState.gameStarted && !uiState.gameOver && uiState.isPaused && (
-        <PauseOverlay
-          xp={uiState.xp}
-          lives={uiState.lives}
-          largeCount={asteroidCountsRef.current.large}
-          mediumCount={asteroidCountsRef.current.medium}
-          smallCount={asteroidCountsRef.current.small}
-          onResume={session.handleResume}
-          onExit={session.handleExitToMenu}
-        />
-      )}
+      <GameOverlayLayer
+        uiState={uiState}
+        session={session}
+        asteroidCounts={asteroidCountsRef.current}
+        lastRun={lastRun}
+      />
 
       <TestConsole
         open={uiState.testingMode}
